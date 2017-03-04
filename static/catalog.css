@@ -1,0 +1,68 @@
+
+div.book-group {
+    margin-top: 1em;
+    background-color: #F5F5F5;
+}
+
+.book, .path {
+    margin-left: 1em;
+}
+
+.book-group>span.id:before { content: 'Book group ID: ' }
+.book>span.id:before { content: 'Book ID: ' }
+.book>span.locale:before { content: 'Locale: ' }
+.book>span.BrandingPackageName:before { content: 'Branding: ' }
+
+.path>.languages:before { content: 'Language='}
+.path>.membership:before { content: 'Membership='}
+.path>.name:before { content: 'Name='}
+.path>.priority:before { content: 'priority='}
+.path>.skuId:before { content: 'skuId='}
+.path>.skuName:before { content: 'skuName='}
+
+.package>.packageType:before { content: 'Package type: ' }
+.package>.packageFormat:before { content: 'Package format: ' }
+.package>.name:before { content: 'Name: ' }
+.package>.deployed:before { content: 'Deployed: ' }
+.package>.last-modified:before { content: 'Last modified: ' }
+.package>.package-etag:before { content: 'Package etag: ' }
+
+.package>.package-size-bytes:before { content: 'Package size (bytes): ' }
+.package>.package-size-bytes-uncompressed:before { content: 'Package size (bytes), uncompressed: ' }
+
+div.packages {
+    margin-top: 0.5em;
+}
+div.package {
+    margin-left: 1em;
+    margin-bottom: 1em;
+}
+
+.book-group>span.id,
+.book-group>span.name,
+.book>span.id,
+.book>span.locale,
+.book>span.name,
+.book>span.description,
+.book>span.BrandingPackageName,
+.package>.packageType,
+.package>.packageFormat,
+.package>.name,
+.package>.deployed,
+.package>.last-modified,
+.package>.package-etag,
+.package>.current-link,
+.package>.package-size-bytes,
+.package>.package-size-bytes-uncompressed
+{ display: block }
+
+.book-group>span.name,
+.book>span.name
+{
+    font-size: larger;
+    font-weight: bold;
+}
+
+.package>.name {
+    font-weight: bold;
+}

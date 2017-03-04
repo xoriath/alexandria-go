@@ -151,7 +151,7 @@ func (i *IndexStore) insertIndexes() chan *types.Indexes {
 
 		idMap := make(map[string]int64)
 
-		for true {
+		for {
 			indexes := <-ch
 
 			fmt.Println("Starting insert for", indexes.BookID)

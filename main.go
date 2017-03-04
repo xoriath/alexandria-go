@@ -1,8 +1,12 @@
 package main
 
 import (
+	"github.com/xoriath/alexandria/handlers"
 	"github.com/xoriath/alexandria/index"
 	"github.com/xoriath/alexandria/types"
+
+	"github.com/gorilla/mux"
+	"github.com/urfave/negroni"
 
 	"encoding/xml"
 
@@ -11,11 +15,11 @@ import (
 	"sync"
 )
 
-func main() {
-	fmt.Println("Fetch index.xml")
+func fetchMain() (*types.Books, error) {
+
 	resp, err := http.Get("http://content.alexandria.atmel.com/meta/index.xml")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	defer resp.Body.Close()
@@ -25,24 +29,44 @@ func main() {
 
 	err = decoder.Decode(books)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	fmt.Println("Fetched", len(books.Books), "books")
+	return books, nil
+}
 
-	index := index.New("keywords", ".db")
-
+func fetchIndexes(books *types.Books, index index.IndexStore) index.IndexStore {
 	var wg sync.WaitGroup
-
 	for _, book := range books.Books {
 		wg.Add(1)
 		index.FetchIndex(book.ID, book.Version, book.Language, &wg)
 	}
-
 	wg.Wait()
-	fmt.Println("Done")
 
-	lookup := index.LookupKeyword("atmel;device:atsaml21e15a;register:intenclr")
+	return index
+}
 
-	fmt.Printf("Lookup: %+v", lookup)
+func main() {
+
+	books, err := fetchMain()
+	if err != nil {
+		panic(err)
+	} else {
+		fmt.Println("Fetched", len(books.Books), "books")
+	}
+
+	//index := fetchIndexes(books, index.New("keywords", ".db"))
+
+	router := mux.NewRouter()
+	router.PathPrefix("/static/").Handler(
+		http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+
+	router.Handle("/catalogs", handlers.NewCatalogHandler(books)).Methods("GET")
+	router.Handle("/catalogs/{product}", handlers.NewCatalogLocalesHandler(books)).Methods("GET")
+	router.Handle("/catalogs/{product}/{locale}", handlers.NewProductHandler(books)).Methods("GET")
+
+	n := negroni.Classic()
+	n.UseHandler(router)
+
+	http.ListenAndServe(":3001", n)
 }
