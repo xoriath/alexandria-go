@@ -11,25 +11,17 @@ import (
 
 	"fmt"
 	"net/http"
-
-	"sync"
 )
 
-var db *sql.DB
-
 func getDb() (db *sql.DB, fresh bool) {
-	if db == nil {
-		var err error
+	var err error
 
-		db, err = sql.Open("sqlite3", "./keywords.db")
-		if err != nil {
-			panic(err)
-		}
-
-		fresh = true
+	db, err = sql.Open("sqlite3", "./keywords.db")
+	if err != nil {
+		panic(err)
 	}
 
-	fresh = false
+	fresh = true
 	return
 }
 
@@ -37,19 +29,68 @@ func prepareDb() {
 	db, fresh := getDb()
 
 	if fresh {
-		stmt, err := db.Prepare("CREATE TABLE keywords ( keyword varchar(255) PRIMARY KEY, book varchar(49), file varchar(46) )")
+		createTableStmt := `
+			CREATE TABLE files (
+				fileid		INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+				book 		VARCHAR(49) NOT NULL,
+				file		VARCHAR(46) NOT NULL,
 
-		_, err = stmt.Exec()
+				CONSTRAINT file_constraint UNIQUE (book, file)
+			);
+
+			CREATE TABLE keywords ( 
+				keyword 	TEXT NOT NULL, 
+				file		INTEGER NOT NULL,
+				
+				FOREIGN KEY(file) REFERENCES files(fileid)
+			);
+			
+			CREATE INDEX keywords_index ON keywords(keyword);
+			`
+
+		_, err := db.Exec(createTableStmt)
+
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 
+func findID(tx *sql.Tx, bookID, file string) (id int64) {
+
+	query := fmt.Sprintf("SELECT fileid FROM files WHERE book = '%v' AND file = '%v'", bookID, file)
+
+	rows, err := tx.Query(query)
+
+	if err != nil {
+		fmt.Println(query)
+		panic(err)
+	}
+
+	for rows.Next() {
+		err := rows.Scan(&id)
+
+		if err != nil {
+			panic(err)
+		}
+
+		break
+	}
+
+	fmt.Println("Fetched existing id", id)
+
+	return
+}
+
 func insertIndexes(indexes *types.Indexes) {
 	db, _ := getDb()
 
-	stmt, err := db.Prepare("INSERT OR REPLACE INTO keywords(keyword, book, file) values(?, ?, ?)")
+	bookStmt, err := db.Prepare("INSERT INTO files(book, file) values(?, ?)")
+	if err != nil {
+		panic(err)
+	}
+
+	keywordStmt, err := db.Prepare("INSERT INTO keywords(keyword, file) values(?, ?)")
 	if err != nil {
 		panic(err)
 	}
@@ -59,12 +100,36 @@ func insertIndexes(indexes *types.Indexes) {
 		panic(err)
 	}
 
+	idMap := make(map[string]int64)
+
 	for _, index := range indexes.Keywords {
 		fmt.Printf("Insert %v (%v:%v)\n", index.Keyword, indexes.BookID, index.File)
-		_, err := tx.Stmt(stmt).Exec(index.Keyword, indexes.BookID, index.File)
+
+		// Check if we have this id already
+		id := idMap[indexes.BookID+index.File]
+		if id == 0 {
+			// Try to insert, will fail if exists due to unique constraint
+			res, err := tx.Stmt(bookStmt).Exec(indexes.BookID, index.File)
+			if err != nil {
+				// unique failed, time to search
+				id = findID(tx, indexes.BookID, index.File)
+			} else {
+				// fetch id that we just inserted
+				id, err = res.LastInsertId()
+				if err != nil {
+					tx.Rollback()
+					panic(err)
+				}
+			}
+		}
+
+		idMap[indexes.BookID+index.File] = id
+
+		_, err := tx.Stmt(keywordStmt).Exec(index.Keyword, id)
 		if err != nil {
 			tx.Rollback()
-			fmt.Println("Panic for", indexes.BookID)
+			fmt.Println("Panic for", indexes.BookID, id)
+			panic(err)
 		}
 	}
 
@@ -72,8 +137,7 @@ func insertIndexes(indexes *types.Indexes) {
 	tx.Commit()
 }
 
-func fetchIndex(id, version, language string, wg *sync.WaitGroup) {
-	defer wg.Done()
+func fetchIndex(id, version, language string) {
 
 	url := fmt.Sprintf("http://content.alexandria.atmel.com/meta/f1/%v-%v-%v.xml", id, language, version)
 
@@ -118,13 +182,9 @@ func main() {
 
 	fmt.Println("Fetched", len(books.Books), "books")
 
-	var wg sync.WaitGroup
-
 	for _, book := range books.Books {
-		wg.Add(1)
-		fetchIndex(book.ID, book.Version, book.Language, &wg)
+		fetchIndex(book.ID, book.Version, book.Language)
 	}
 
-	wg.Wait()
 	fmt.Println("Done")
 }
