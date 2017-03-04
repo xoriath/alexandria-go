@@ -11,6 +11,7 @@ import (
 
 	"fmt"
 	"net/http"
+	"sync"
 )
 
 func getDb() (db *sql.DB, fresh bool) {
@@ -82,63 +83,76 @@ func findID(tx *sql.Tx, bookID, file string) (id int64) {
 	return
 }
 
-func insertIndexes(indexes *types.Indexes) {
-	db, _ := getDb()
+func insertIndexes() chan *types.Indexes {
 
-	bookStmt, err := db.Prepare("INSERT INTO files(book, file) values(?, ?)")
-	if err != nil {
-		panic(err)
-	}
+	ch := make(chan *types.Indexes)
 
-	keywordStmt, err := db.Prepare("INSERT INTO keywords(keyword, file) values(?, ?)")
-	if err != nil {
-		panic(err)
-	}
+	go func() {
 
-	tx, err := db.Begin()
-	if err != nil {
-		panic(err)
-	}
+		db, _ := getDb()
 
-	idMap := make(map[string]int64)
+		bookStmt, err := db.Prepare("INSERT INTO files(book, file) values(?, ?)")
+		if err != nil {
+			panic(err)
+		}
 
-	for _, index := range indexes.Keywords {
-		fmt.Printf("Insert %v (%v:%v)\n", index.Keyword, indexes.BookID, index.File)
+		keywordStmt, err := db.Prepare("INSERT INTO keywords(keyword, file) values(?, ?)")
+		if err != nil {
+			panic(err)
+		}
 
-		// Check if we have this id already
-		id := idMap[indexes.BookID+index.File]
-		if id == 0 {
-			// Try to insert, will fail if exists due to unique constraint
-			res, err := tx.Stmt(bookStmt).Exec(indexes.BookID, index.File)
+		idMap := make(map[string]int64)
+
+		for true {
+			indexes := <-ch
+
+			fmt.Println("Starting insert for", indexes.BookID)
+
+			tx, err := db.Begin()
 			if err != nil {
-				// unique failed, time to search
-				id = findID(tx, indexes.BookID, index.File)
-			} else {
-				// fetch id that we just inserted
-				id, err = res.LastInsertId()
+				panic(err)
+			}
+
+			for _, index := range indexes.Keywords {
+				//fmt.Printf("Insert %v (%v:%v)\n", index.Keyword, indexes.BookID, index.File)
+
+				// Check if we have this id already
+				id := idMap[indexes.BookID+index.File]
+				if id == 0 {
+					// Try to insert, will fail if exists due to unique constraint
+					res, err := tx.Stmt(bookStmt).Exec(indexes.BookID, index.File)
+					if err != nil {
+						// unique failed, time to search
+						id = findID(tx, indexes.BookID, index.File)
+					} else {
+						// fetch id that we just inserted
+						id, err = res.LastInsertId()
+						if err != nil {
+							tx.Rollback()
+							panic(err)
+						}
+					}
+				}
+
+				idMap[indexes.BookID+index.File] = id
+
+				_, err := tx.Stmt(keywordStmt).Exec(index.Keyword, id)
 				if err != nil {
 					tx.Rollback()
+					fmt.Println("Panic for", indexes.BookID, id)
 					panic(err)
 				}
 			}
+
+			fmt.Println("Commit", indexes.BookID)
+			tx.Commit()
 		}
+	}()
 
-		idMap[indexes.BookID+index.File] = id
-
-		_, err := tx.Stmt(keywordStmt).Exec(index.Keyword, id)
-		if err != nil {
-			tx.Rollback()
-			fmt.Println("Panic for", indexes.BookID, id)
-			panic(err)
-		}
-	}
-
-	fmt.Println("Commit", indexes.BookID)
-	tx.Commit()
+	return ch
 }
 
-func fetchIndex(id, version, language string) {
-
+func fetchIndex(id, version, language string, ch chan *types.Indexes, wg *sync.WaitGroup) {
 	url := fmt.Sprintf("http://content.alexandria.atmel.com/meta/f1/%v-%v-%v.xml", id, language, version)
 
 	resp, err := http.Get(url)
@@ -157,7 +171,9 @@ func fetchIndex(id, version, language string) {
 		panic(err)
 	}
 
-	insertIndexes(indexes)
+	ch <- indexes
+
+	wg.Done()
 }
 
 func main() {
@@ -182,9 +198,15 @@ func main() {
 
 	fmt.Println("Fetched", len(books.Books), "books")
 
+	var wg sync.WaitGroup
+	ch := insertIndexes()
+
 	for _, book := range books.Books {
-		fetchIndex(book.ID, book.Version, book.Language)
+		wg.Add(1)
+		fetchIndex(book.ID, book.Version, book.Language, ch, &wg)
 	}
 
+	wg.Wait()
 	fmt.Println("Done")
+	close(ch)
 }
