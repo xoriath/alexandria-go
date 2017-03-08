@@ -2,7 +2,7 @@
     <head>
         <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" />
         <meta http-equiv="Content-Location" content="/catalogs/{{.Product}}" />
-        <link type="text/css" rel="stylesheet" href="/static/global.css" />
+        <link type="text/css" rel="stylesheet" href="/static/catalog.css" />
         <title>Catalog Locales Listing</title>
     </head>
 
@@ -11,12 +11,13 @@
             <a class="catalog-link" href="/catalogs">Catalogs</a>
         </div>
         <div class="catalog-locale-list">Locales available:
-            {{- range .Locales}}
+            {{-  $product := .Product }}
+            {{- range .Locales }}
             <div class="catalog-locale">
-                <span class="locale">{{.Locale}}</span>
-                <span class="catalog-name">{{.Product}}</span>
+                <span class="locale">{{.}}</span>
+                <span class="catalog-name">{{$product}}</span>
                 <span class="description" />
-                <a class="locale-link" href="/catalogs/{{.Product}}/{{.Locale}}">{{.Product}}</a>
+                <a class="locale-link" href="/catalogs/{{$product}}/{{.}}">{{$product}}</a>
             </div>
             {{- end }}
         </div>
