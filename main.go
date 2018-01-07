@@ -1,12 +1,15 @@
 package main
 
 import (
+	"log"
+
 	"github.com/xoriath/alexandria/handlers"
 	"github.com/xoriath/alexandria/index"
 	"github.com/xoriath/alexandria/types"
 
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
+	"gopkg.in/cheggaaa/pb.v1"
 
 	"encoding/xml"
 
@@ -35,38 +38,50 @@ func fetchMain() (*types.Books, error) {
 	return books, nil
 }
 
-func fetchIndexes(books *types.Books, index index.IndexStore) index.IndexStore {
+func fetchIndexes(books *types.Books, index index.Store) index.Store {
 	var wg sync.WaitGroup
+	wg.Add(len(books.Books))
+
+	progressBar := pb.New(len(books.Books)).Prefix("Fetching indexes ").Start()
+
 	for _, book := range books.Books {
-		wg.Add(1)
-		index.FetchIndex(book.ID, book.Version, book.Language, &wg)
+		index.FetchIndex(&book, &wg, progressBar)
 	}
+
 	wg.Wait()
+	progressBar.Finish()
 
 	return index
 }
 
 func main() {
 
+	fmt.Println("Fetching main index file...")
 	books, err := fetchMain()
 	if err != nil {
 		panic(err)
 	} else {
-		fmt.Println("Fetched", len(books.Books), "books")
+		fmt.Println("Fetched main index,", len(books.Books), "books are available")
 	}
 
-	//index := fetchIndexes(books, index.New("keywords", ".db"))
-
-	router := mux.NewRouter()
-	router.PathPrefix("/static/").Handler(
+	mux := mux.NewRouter()
+	mux.PathPrefix("/static/").Handler(
 		http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
-	router.Handle("/catalogs", handlers.NewCatalogHandler(books)).Methods("GET")
-	router.Handle("/catalogs/{product}", handlers.NewCatalogLocalesHandler(books)).Methods("GET")
-	router.Handle("/catalogs/{product}/{locale}", handlers.NewProductHandler(books)).Methods("GET")
+	mux.Handle("/", handlers.NewRootHandler(books)).Methods("GET")
+	mux.Handle("/catalogs", handlers.NewCatalogHandler(books)).Methods("GET")
+	mux.Handle("/catalogs/{product}", handlers.NewCatalogLocalesHandler(books)).Methods("GET")
+	mux.Handle("/catalogs/{product}/{locale}", handlers.NewProductHandler(books)).Methods("GET")
 
 	n := negroni.Classic()
-	n.UseHandler(router)
+	logger := negroni.NewLogger()
 
-	http.ListenAndServe(":3001", n)
+	n.Use(logger)
+	n.UseHandler(mux)
+
+	_ = fetchIndexes(books, index.NewStore("keywords", ".db"))
+
+	serverAddress := ":3001"
+	fmt.Println("Server running, listening on", serverAddress)
+	log.Fatal(http.ListenAndServe(serverAddress, n))
 }

@@ -11,12 +11,14 @@ import (
 	_ "github.com/mattn/go-sqlite3" // use sqlite
 	"github.com/xoriath/alexandria/types"
 
+	"gopkg.in/cheggaaa/pb.v1"
+
 	"errors"
 	"os"
 )
 
-// IndexStore is the store for keywords
-type IndexStore struct {
+// Store is the store for keywords
+type Store struct {
 	FileName string
 	handle   *sql.DB
 
@@ -26,9 +28,9 @@ type IndexStore struct {
 	indexWriteChan chan *types.Indexes
 }
 
-// Create a new instance of the index store
-func New(prefix, ext string) IndexStore {
-	store := IndexStore{prefix: prefix, ext: ext}
+// NewStore creates a index store
+func NewStore(prefix, ext string) Store {
+	store := Store{prefix: prefix, ext: ext}
 
 	store.prepareDb()
 
@@ -37,7 +39,7 @@ func New(prefix, ext string) IndexStore {
 	return store
 }
 
-func (i *IndexStore) getDbFile(prefix, ext string) (string, error) {
+func (i *Store) getDbFile(prefix, ext string) (string, error) {
 
 	if i.FileName == "" {
 
@@ -55,7 +57,7 @@ func (i *IndexStore) getDbFile(prefix, ext string) (string, error) {
 	return i.FileName, nil
 }
 
-func (i *IndexStore) getDb() *sql.DB {
+func (i *Store) getDb() *sql.DB {
 
 	if i.handle == nil {
 
@@ -73,7 +75,7 @@ func (i *IndexStore) getDb() *sql.DB {
 	return i.handle
 }
 
-func (i *IndexStore) prepareDb() {
+func (i *Store) prepareDb() {
 	db := i.getDb()
 
 	createTableStmt := `
@@ -104,7 +106,7 @@ func (i *IndexStore) prepareDb() {
 	}
 }
 
-func (i *IndexStore) findID(tx *sql.Tx, bookID, file string) (id int64) {
+func (i *Store) findID(tx *sql.Tx, bookID, file string) (id int64) {
 
 	stmt, _ := tx.Prepare("SELECT file FROM files WHERE book = '?' AND filename = '?'")
 
@@ -131,7 +133,7 @@ func (i *IndexStore) findID(tx *sql.Tx, bookID, file string) (id int64) {
 	return
 }
 
-func (i *IndexStore) insertIndexes() chan *types.Indexes {
+func (i *Store) insertIndexes() chan *types.Indexes {
 
 	ch := make(chan *types.Indexes)
 
@@ -154,15 +156,12 @@ func (i *IndexStore) insertIndexes() chan *types.Indexes {
 		for {
 			indexes := <-ch
 
-			fmt.Println("Starting insert for", indexes.BookID)
-
 			tx, err := db.Begin()
 			if err != nil {
 				panic(err)
 			}
 
 			for _, index := range indexes.Keywords {
-				//fmt.Printf("Insert %v (%v:%v)\n", index.Keyword, indexes.BookID, index.File)
 
 				// Check if we have this id already
 				id := idMap[indexes.BookID+index.File]
@@ -193,7 +192,6 @@ func (i *IndexStore) insertIndexes() chan *types.Indexes {
 				}
 			}
 
-			fmt.Println("Commit", indexes.BookID)
 			tx.Commit()
 		}
 	}()
@@ -201,8 +199,14 @@ func (i *IndexStore) insertIndexes() chan *types.Indexes {
 	return ch
 }
 
-func (i *IndexStore) FetchIndex(id, version, language string, wg *sync.WaitGroup) {
-	url := fmt.Sprintf("http://content.alexandria.atmel.com/meta/f1/%v-%v-%v.xml", id, language, version)
+// FetchIndex downloads the index file, decodes it and requests it to be added to the store
+func (i *Store) FetchIndex(book *types.Book, wg *sync.WaitGroup, progressBar *pb.ProgressBar) {
+
+	if wg != nil {
+		defer wg.Done()
+	}
+
+	url := fmt.Sprintf("http://content.alexandria.atmel.com/meta/f1/%v-%v-%v.xml", book.ID, book.Language, book.Version)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -226,15 +230,19 @@ func (i *IndexStore) FetchIndex(id, version, language string, wg *sync.WaitGroup
 
 	i.indexWriteChan <- indexes
 
-	wg.Done()
+	if progressBar != nil {
+		progressBar.Increment()
+	}
 }
 
+// KeywordResult is a single result, pointing to a BookID and a Filename inside this book which has the keyword
 type KeywordResult struct {
 	BookID   string
 	Filename string
 }
 
-func (i *IndexStore) LookupKeyword(keyword string) []KeywordResult {
+// LookupKeyword looks up the keyword in the store, and returns a slice of KeywordResult
+func (i *Store) LookupKeyword(keyword string) []KeywordResult {
 	stmt, err := i.handle.Prepare(`
 		SELECT files.book, files.filename
 		FROM keywords
