@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	_ "github.com/mattn/go-sqlite3" // use sqlite
-	"github.com/xoriath/alexandria/types"
+	"github.com/xoriath/alexandria-go/types"
 
 	"gopkg.in/cheggaaa/pb.v1"
 

@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/xoriath/alexandria/types"
+	"github.com/xoriath/alexandria-go/types"
 )
 
 type Root struct {

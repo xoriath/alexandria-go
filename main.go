@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/xoriath/alexandria/handlers"
-	"github.com/xoriath/alexandria/index"
-	"github.com/xoriath/alexandria/types"
+	"github.com/xoriath/alexandria-go/handlers"
+	"github.com/xoriath/alexandria-go/index"
+	"github.com/xoriath/alexandria-go/types"
 
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/xoriath/alexandria/types"
+	"github.com/xoriath/alexandria-go/types"
 )
 
 type catalogLocales struct {
