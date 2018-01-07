@@ -14,8 +14,6 @@ type catalogLocales struct {
 }
 
 type CatalogLocale struct {
-	template *template.Template
-
 	ProductLocales map[string][]string
 }
 
@@ -31,9 +29,7 @@ func NewCatalogLocalesHandler(books *types.Books) *CatalogLocale {
 		productLocales[product] = books.Locales(product)
 	}
 
-	t := template.Must(template.ParseFiles("./templates/catalogLocales.html"))
-
-	return &CatalogLocale{ProductLocales: productLocales, template: t}
+	return &CatalogLocale{ProductLocales: productLocales}
 }
 
 func (c *CatalogLocale) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -47,7 +43,8 @@ func (c *CatalogLocale) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err := c.template.Execute(w, &catalogLocalePage{Product: product, Locales: locales})
+	t := template.Must(template.ParseFiles("./templates/catalogLocales.html"))
+	err := t.Execute(w, &catalogLocalePage{Product: product, Locales: locales})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

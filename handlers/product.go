@@ -8,16 +8,14 @@ import (
 )
 
 type Product struct {
-	template *template.Template
+	books *types.Books
 }
 
 type productInfo struct {
-	
 }
 
-
 func NewProductHandler(books *types.Books) *Product {
-	return &Product{}
+	return &Product{books: books}
 }
 
 func (p *Product) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -26,8 +24,9 @@ func (p *Product) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// product := vars["product"]
 	// locale := vars["locale"]
 
-	// err := p.template.Execute(w)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// }
+	t := template.Must(template.ParseFiles("./templates/product.html"))
+	err := t.Execute(w, p.books)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }

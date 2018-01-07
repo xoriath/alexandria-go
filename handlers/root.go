@@ -9,23 +9,17 @@ import (
 
 type Root struct {
 	books *types.Books
-
-	//template *template.Template
-	templatePath string
 }
 
 // NewRootHandler create the handler for the root page
 func NewRootHandler(books *types.Books) *Root {
-
-	//t := template.Must(template.ParseFiles("./templates/root.html"))
-
-	return &Root{books: books, templatePath: "./templates/root.html"}
+	return &Root{books: books}
 }
 
 // CatalogHandler handles the
 func (r *Root) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
-	t := template.Must(template.ParseFiles(r.templatePath))
+	t := template.Must(template.ParseFiles("./templates/root.html"))
 	err := t.Execute(w, r.books)
 
 	if err != nil {
