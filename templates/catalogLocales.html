@@ -1,0 +1,24 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" />
+        <meta http-equiv="Content-Location" content="/catalogs/{{.Product}}" />
+        <title>Catalog Locales Listing</title>
+    </head>
+
+    <body class="catalogLocales">
+        <div class="details">
+            <a class="catalog-link" href="/catalogs">Catalogs</a>
+        </div>
+        <div class="catalog-locale-list">Locales available:
+            {{-  $product := .Product }}
+            {{- range .Locales }}
+            <div class="catalog-locale">
+                <span class="locale">{{.}}</span>
+                <span class="catalog-name">{{$product}}</span>
+                <span class="description" />
+                <a class="locale-link" href="/catalogs/{{$product}}/{{.}}">{{$product}}</a>
+            </div>
+            {{- end }}
+        </div>
+    </body>
+</html>

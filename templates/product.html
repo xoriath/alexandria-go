@@ -1,0 +1,76 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" />
+        <meta http-equiv="Content-Location" content="/catalogs/{{.Product}}/{{.Locale}}" />
+        <link type="text/css" rel="stylesheet" href="/static/catalog.css" />
+        <title>All Book Listings</title>
+    </head>
+
+    <body class="book-list">
+        <div class="details">
+            <a class="catalog-locale-link" href="/catalogs/{{.Product}}">Catalog locales</a>
+        </div>
+        <div class="book-groups">
+            {{- range .Books }}
+            <div class="book-group">
+                <span class="id">BOOK-{{.ID}}</span>
+                <span class="name">{{.Title}}</span>
+                <span class="vendor">Atmel</span>
+                <div class="book">
+                    <span class="id">{{.ID}}</span>
+                    <span class="locale">{{.Language}}</span>
+                    <span class="name">{{.Title}}</span>
+                    <span class="description"></span>
+                    <span class="BrandingPackageName">mshelp-branding</span>
+                    <div class="properties">
+                        <div class="paths">
+                            <div class="path">
+                                <span class="languages">en-US</span>
+                                <span class="membership">full</span>
+                                <span class="name">\User Guides\Software\Extensions</span>
+                                <span class="priority">1000</span>
+                                <span class="skuId">500</span>
+                                <span class="skuName">Standard</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="packages">The following packages are available in this book:
+
+                        <div class="package">
+                            <span class="packageType">content</span>
+                            <span class="packageFormat">v2.0</span>
+                            <span class="name">{{.ID}}-{{.Language}}-{{.Version}}</span>Deployed:
+                            <span class="deployed">true</span>
+                            <span class="last-modified">{{.Timestamp}}</span>
+                            <span class="package-etag">{{.CabMD5}}</span>
+
+                            <a class="current-link" href="/cab/{{.ID}}-{{.Language}}-{{.Version}}">{{.ID}}-{{.Language}}-{{.Version}}</a>
+                            <a class="package-constituent-link" href="/cab/{{.ID}}-{{.Language}}-{{.Version}}">/cab/{{.ID}}-{{.Language}}-{{.Version}}</a>
+
+                            <span class="package-size-bytes">{{.CompressedSize}}</span>
+                            <span class="package-size-bytes-uncompressed">{{.RawSize}}</span>
+                        </div>
+
+                        <div class="package">
+                            <span class="packageType">branding</span>
+                            <span class="packageFormat">v2.0</span>
+                            <span class="name">mshelp-branding</span>Deployed:
+                            <span class="deployed">true</span>
+                            <span class="last-modified">2017-02-24T09:41:23.00Z</span>
+                            <span class="package-etag">ff3e40c96f15d5c4d799f45c49d311b48d6ae866</span>
+
+                            <a class="current-link" href="/branding/mshelp-branding.cab">/branding/mshelp-branding.cab</a>
+                            <a class="package-constituent-link" href="/branding/mshelp-branding.cab">/branding/mshelp-branding.cab</a>)
+
+                            <span class="package-size-bytes">39197</span>
+                            <span class="package-size-bytes-uncompressed">34504</span>
+                        </div>
+
+                    </div>
+
+                </div>
+                {{- end }}
+            </div>
+        </div>
+    </body>
+</html>
