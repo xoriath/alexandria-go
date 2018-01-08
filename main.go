@@ -78,8 +78,8 @@ func main() {
 
 	store := fetchIndexes(books, index.NewStore("keywords", ".db"))
 
-	mux.Handle("/keyword/{keyword}", handlers.NewKeywordHandler(&store).Redirect()).Methods("GET")
-	mux.Handle("/keyword/{keyword}/redirect", handlers.NewKeywordHandler(&store).NoRedirect()).Methods("GET")
+	mux.Handle("/keyword/{keyword}", handlers.NewKeywordHandler(&store).NoRedirect()).Methods("GET")
+	mux.Handle("/keyword/{keyword}/redirect", handlers.NewKeywordHandler(&store).Redirect()).Methods("GET")
 
 	mux.Handle("/device-lookup/{device}/register/{register}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
 	mux.Handle("/device-lookup/{device}/register/{register}/bitfield/{bitfield}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
