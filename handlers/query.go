@@ -25,10 +25,10 @@ func (q *Query) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// and we want a list of all k(<query>) parts of the string. k\(([^\)]+)\)
 
-	appId := r.FormValue("appId")
-	language := r.FormValue("language")
+	//appId := r.FormValue("appId")
+	//language := r.FormValue("language")
 	rawKeywords := r.FormValue("keywords")
-	redirect := r.FormValue("redirect")
+	//redirect := r.FormValue("redirect")
 
 	keywords := q.regexp.FindAllString(rawKeywords, -1)
 	if keywords == nil {
