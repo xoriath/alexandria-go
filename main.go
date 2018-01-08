@@ -72,27 +72,23 @@ func main() {
 	mux.Handle("/catalogs", handlers.NewCatalogHandler(books)).Methods("GET")
 	mux.Handle("/catalogs/{product}", handlers.NewCatalogLocalesHandler(books)).Methods("GET")
 	mux.Handle("/catalogs/{product}/{locale}", handlers.NewProductHandler(books)).Methods("GET")
-	
+
 	mux.Handle("/cab/{guid:GUID-\\S+-\\S+-\\S+-\\S+}-{language:[a-zA-Z]+-[a-zA-Z]+}-{version:[0-9]+}.cab", handlers.NewResourceHandler("cab")).Methods("GET")
-	mux.handle("/package/{guid:GUID-\\S+-\\S+-\\S+-\\S+}/{version:[0-9]+}/{language:[a-zA-Z]+-[a-zA-Z]+}", handlers.NewResourceHandler("package")).Methods("GET")
-	
+	mux.Handle("/package/{guid:GUID-\\S+-\\S+-\\S+-\\S+}/{version:[0-9]+}/{language:[a-zA-Z]+-[a-zA-Z]+}", handlers.NewResourceHandler("package")).Methods("GET")
+
 	store := fetchIndexes(books, index.NewStore("keywords", ".db"))
-	
-	mux.Handle("/keyword/{keyword}", handlers.NewKeywordHandler(store).Redirect()).Methods("GET")
-	mux.Handle("/keyword/{keyword}/redirect", handlers.NewKeywordHandler(store).NoRedirect).Methods("GET"))
-	
-	mux.Handle("/device-lookup/{device}/register/{register}", handlers.NewDeviceLookupHandler(store)).Methods("GET")
-	mux.Handle("/device-lookup/{device}/register/{register}/bitfield/{bitfield}", handlers.NewDeviceLookupHandler(store)).Methods("GET")
-	mux.Handle("/device-lookup/{device}/component/{component}", handlers.NewDeviceLookupHandler(store)).Methods("GET")
-	mux.Handle("/device-lookup/{device}/component/{component}/register/{register}", handlers.NewDeviceLookupHandler(store)).Methods("GET")
-	mux.Handle("/device-lookup/{device}/component/{component}/register/{register}/bitfield/{bitfield}", handlers.NewDeviceLookupHandler(store)).Methods("GET")
-	
+
+	mux.Handle("/keyword/{keyword}", handlers.NewKeywordHandler(&store).Redirect()).Methods("GET")
+	mux.Handle("/keyword/{keyword}/redirect", handlers.NewKeywordHandler(&store).NoRedirect()).Methods("GET")
+
+	mux.Handle("/device-lookup/{device}/register/{register}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
+	mux.Handle("/device-lookup/{device}/register/{register}/bitfield/{bitfield}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
+	mux.Handle("/device-lookup/{device}/component/{component}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
+	mux.Handle("/device-lookup/{device}/component/{component}/register/{register}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
+	mux.Handle("/device-lookup/{device}/component/{component}/register/{register}/bitfield/{bitfield}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
+
 	// config.add_route('reload', '/reload')
-	mux.Handler("query/{query}", handlers.NewQueryHandler(store)).Methods("GET")
-		.Queries("appId", "{appId}")
-		.Queries("l", "{language}")
-		.Queries("k", "keywords")
-		.Queries("rd", "redirect")
+	mux.Handle("/query/{query}", handlers.NewQueryHandler(&store)).Methods("GET").Queries("appId", "{appId}").Queries("l", "{language}").Queries("k", "keywords").Queries("rd", "redirect")
 
 	n := negroni.Classic()
 	logger := negroni.NewLogger()
