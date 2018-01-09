@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/xoriath/alexandria-go/handlers"
@@ -87,7 +88,26 @@ func main() {
 	mux.Handle("/device-lookup/{device}/component/{component}/register/{register}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
 	mux.Handle("/device-lookup/{device}/component/{component}/register/{register}/bitfield/{bitfield}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
 
-	// config.add_route('reload', '/reload')
+	mux.HandleFunc("/reload/books", func(w http.ResponseWriter, r *http.Request) {
+		tempBooks, err := fetchMain()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			books = tempBooks
+			json.NewEncoder(w).Encode(books)
+		}
+	})
+	mux.HandleFunc("/reload/keywords", func(w http.ResponseWriter, r *http.Request) {
+		tempStore := fetchIndexes(books, index.NewStore("keywords", ".db"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			store = tempStore
+			stat := store.GetStatistics()
+			json.NewEncoder(w).Encode(stat)
+		}
+	})
+
 	mux.Handle("/query/{query}", handlers.NewQueryHandler(&store)).Methods("GET").Queries("appId", "{appId}").Queries("l", "{language}").Queries("k", "keywords").Queries("rd", "redirect")
 
 	n := negroni.Classic()

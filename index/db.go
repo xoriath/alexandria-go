@@ -272,3 +272,81 @@ func (i *Store) LookupKeyword(keyword string) []KeywordResult {
 
 	return results
 }
+
+type DatabaseStatistics struct {
+	NumberOfFiles int `json:"number_of_files"`
+	KeywordCount  int `json:"number_of_keywords"`
+}
+
+func (i *Store) GetStatistics() DatabaseStatistics {
+	fileCount := i.getFileCount()
+	keywordCount := i.getKeywordCount()
+
+	return DatabaseStatistics{NumberOfFiles: fileCount, KeywordCount: keywordCount}
+}
+
+func (i *Store) getFileCount() (count int) {
+	rows, err := i.handle.Query(`
+		SELECT COUNT() 
+		as count 
+		FROM files`)
+	if err != nil {
+		panic(err)
+	}
+
+	for rows.Next() {
+		err := rows.Scan(&count)
+		if err != nil {
+			panic(err)
+		} else {
+			return
+		}
+	}
+
+	return
+}
+
+func (i *Store) getKeywordCount() (count int) {
+	rows, err := i.handle.Query(`
+		SELECT COUNT() 
+		as count 
+		FROM keywords`)
+	if err != nil {
+		panic(err)
+	}
+
+	for rows.Next() {
+		err := rows.Scan(&count)
+		if err != nil {
+			panic(err)
+		} else {
+			return
+		}
+	}
+
+	return
+}
+
+func (i *Store) getKeywords() (keywords []string) {
+	rows, err := i.handle.Query(`
+		SELECT keyword
+		FROM keywords
+		ORDER BY keyword`)
+
+	if err != nil {
+		panic(err)
+	}
+
+	for rows.Next() {
+		var keyword string
+
+		err := rows.Scan(&keyword)
+		if err != nil {
+			panic(err)
+		}
+
+		keywords = append(keywords, keyword)
+	}
+
+	return
+}
