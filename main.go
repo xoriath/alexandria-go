@@ -73,8 +73,8 @@ func main() {
 	mux.Handle("/catalogs/{product}", handlers.NewCatalogLocalesHandler(books)).Methods("GET")
 	mux.Handle("/catalogs/{product}/{locale}", handlers.NewProductHandler(books)).Methods("GET")
 
-	mux.Handle("/cab/{guid:GUID-\\S+-\\S+-\\S+-\\S+}-{language:[a-zA-Z]+-[a-zA-Z]+}-{version:[0-9]+}.cab", handlers.NewResourceHandler("cab")).Methods("GET")
-	mux.Handle("/package/{guid:GUID-\\S+-\\S+-\\S+-\\S+}/{version:[0-9]+}/{language:[a-zA-Z]+-[a-zA-Z]+}", handlers.NewResourceHandler("package")).Methods("GET")
+	mux.Handle("/cab/{guid:GUID-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+}-{language:[a-zA-Z]+-[a-zA-Z]+}-{version:[0-9]+}.cab", handlers.NewResourceHandler(books, "cab")).Methods("GET")
+	mux.Handle("/package/{guid:GUID-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+}/{version:[0-9]+}/{language:[a-zA-Z]+-[a-zA-Z]+}", handlers.NewResourceHandler(books, "package")).Methods("GET")
 
 	store := fetchIndexes(books, index.NewStore("keywords", ".db"))
 
