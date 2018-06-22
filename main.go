@@ -1,115 +1,57 @@
 package main
 
 import (
-	"encoding/json"
+	"flag"
 	"log"
 
-	"github.com/xoriath/alexandria-go/handlers"
-	"github.com/xoriath/alexandria-go/index"
-	"github.com/xoriath/alexandria-go/types"
-
-	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
-	"gopkg.in/cheggaaa/pb.v1"
-
-	"encoding/xml"
+	"github.com/xoriath/alexandria-go/fetch"
+	"github.com/xoriath/alexandria-go/index"
 
 	"fmt"
 	"net/http"
-	"sync"
 )
 
-func fetchMain() (*types.Books, error) {
-
-	resp, err := http.Get("http://content.alexandria.atmel.com/meta/index.xml")
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-
-	decoder := xml.NewDecoder(resp.Body)
-	books := new(types.Books)
-
-	err = decoder.Decode(books)
-	if err != nil {
-		return nil, err
-	}
-
-	return books, nil
-}
-
-func fetchIndexes(books *types.Books, index index.Store) index.Store {
-	var wg sync.WaitGroup
-	wg.Add(len(books.Books))
-
-	progressBar := pb.New(len(books.Books)).Prefix("Fetching indexes ").Start()
-
-	for _, book := range books.Books {
-		index.FetchIndex(&book, &wg, progressBar)
-	}
-
-	wg.Wait()
-	progressBar.Finish()
-
-	return index
-}
+var mainIndex = flag.String("main-index", "http://content.alexandria.atmel.com/meta/index.xml",
+	"Provide the name of the main index to use. Leave undefined to download from the content server.")
+var fetchKeywords = flag.Bool("fetch-keywords", true,
+	"Fetch the keyword indexes.")
+var preparedKeywordStore = flag.String("prepared-keyword-store", "",
+	"Point initally to a already populated keyword store.")
+var keywordStorePrefix = flag.String("keyword-store-prefix", "keywords",
+	"Prefix of the keyword store data base.")
+var keywordStoreExtension = flag.String("keyword-store-extension", "db",
+	"Extension of the keyword store data base.")
+var redirectPattern = flag.String("content-redirect-pattern", "http://content.alexandria.atmel.com/webhelp/{{.Book}}/index.html?{{.Topic}}",
+	"Redirect pattern for content lookups. 2 replacement parameters, first is Book GUID and second is Topic GUID.")
+var f1FragmentPattern = flag.String("f1-fragment-pattern", "http://content.alexandria.atmel.com/meta/f1/{{.Id}}-{{.Language}}-{{.Version}}.xml",
+	"Pattern for the F1 fragments")
 
 func main() {
 
-	fmt.Println("Fetching main index file...")
-	books, err := fetchMain()
+	flag.Parse()
+	books, err := fetch.MainIndex(*mainIndex)
 	if err != nil {
 		panic(err)
 	} else {
-		fmt.Println("Fetched main index,", len(books.Books), "books are available")
+		fmt.Println("Read main index,", len(books.Books), "books are available")
 	}
 
-	mux := mux.NewRouter()
-	mux.PathPrefix("/static/").Handler(
-		http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	var store index.Store
+	if *preparedKeywordStore != "" {
+		store = index.OldStore(*preparedKeywordStore, *f1FragmentPattern)
+	} else {
+		store = index.NewStore(*keywordStorePrefix, *keywordStoreExtension, *f1FragmentPattern)
+	}
 
-	mux.Handle("/", handlers.NewRootHandler(books)).Methods("GET")
-	mux.Handle("/catalogs", handlers.NewCatalogHandler(books)).Methods("GET")
-	mux.Handle("/catalogs/{product}", handlers.NewCatalogLocalesHandler(books)).Methods("GET")
-	mux.Handle("/catalogs/{product}/{locale}", handlers.NewProductHandler(books)).Methods("GET")
+	if *fetchKeywords {
+		store = fetch.F1Indexes(books, store)
+	}
 
-	mux.Handle("/cab/{guid:GUID-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+}-{language:[a-zA-Z]+-[a-zA-Z]+}-{version:[0-9]+}.cab", handlers.NewResourceHandler(books, "cab")).Methods("GET")
-	mux.Handle("/package/{guid:GUID-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+}/{version:[0-9]+}/{language:[a-zA-Z]+-[a-zA-Z]+}", handlers.NewResourceHandler(books, "package")).Methods("GET")
+	keywordStatistics := store.GetStatistics()
+	fmt.Println("Index store using ", store.FileName, "with", keywordStatistics.KeywordCount, "keywords covering", keywordStatistics.NumberOfFiles, "files")
 
-	store := fetchIndexes(books, index.NewStore("keywords", ".db"))
-
-	mux.Handle("/keyword/{keyword}", handlers.NewKeywordHandler(&store).NoRedirect()).Methods("GET")
-	mux.Handle("/keyword/{keyword}/redirect", handlers.NewKeywordHandler(&store).Redirect()).Methods("GET")
-
-	mux.Handle("/device-lookup/{device}/register/{register}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
-	mux.Handle("/device-lookup/{device}/register/{register}/bitfield/{bitfield}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
-	mux.Handle("/device-lookup/{device}/component/{component}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
-	mux.Handle("/device-lookup/{device}/component/{component}/register/{register}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
-	mux.Handle("/device-lookup/{device}/component/{component}/register/{register}/bitfield/{bitfield}", handlers.NewDeviceLookupHandler(&store)).Methods("GET")
-
-	mux.HandleFunc("/reload/books", func(w http.ResponseWriter, r *http.Request) {
-		tempBooks, err := fetchMain()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			books = tempBooks
-			json.NewEncoder(w).Encode(books)
-		}
-	})
-	mux.HandleFunc("/reload/keywords", func(w http.ResponseWriter, r *http.Request) {
-		tempStore := fetchIndexes(books, index.NewStore("keywords", ".db"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			store = tempStore
-			stat := store.GetStatistics()
-			json.NewEncoder(w).Encode(stat)
-		}
-	})
-
-	mux.Handle("/query/{query}", handlers.NewQueryHandler(&store)).Methods("GET").Queries("appId", "{appId}").Queries("l", "{language}").Queries("k", "keywords").Queries("rd", "redirect")
-
+	mux := createRoutes(books, &store, *mainIndex, *redirectPattern)
 	n := negroni.Classic()
 	logger := negroni.NewLogger()
 

@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -12,13 +14,17 @@ import (
 )
 
 type Keyword struct {
-	store    *index.Store
-	redirect bool
+	store                   *index.Store
+	redirect                bool
+	contentRedirectTemplate *template.Template
 }
 
 // NewKeywordHandler create a new KeywordHandler
-func NewKeywordHandler(store *index.Store) *Keyword {
-	return &Keyword{store: store, redirect: false}
+func NewKeywordHandler(store *index.Store, redirectPattern string) *Keyword {
+	return &Keyword{
+		store:                   store,
+		redirect:                false,
+		contentRedirectTemplate: template.Must(template.New("").Parse(redirectPattern))}
 }
 
 // Redirect set the keyword handler to redirect via HTTP Temporary redirect to the result page
@@ -48,12 +54,17 @@ func (k *Keyword) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("No results for query '%v'", keyword), http.StatusNotFound)
 	} else {
 		result := keywordResults[0]
-		url := fmt.Sprintf("http://content.alexandria.atmel.com/webhelp/%v/index.html?%v", result.BookID, strings.TrimSuffix(result.Filename, filepath.Ext(result.Filename)))
+		parts := map[string]string{"Book": result.BookID, "Topic": strings.TrimSuffix(result.Filename, filepath.Ext(result.Filename))}
+
+		var url bytes.Buffer
+		if err := k.contentRedirectTemplate.Execute(&url, parts); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
 		if k.redirect {
-			http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
 		} else {
-			urlResponse := &urlResponseType{URL: url}
+			urlResponse := &urlResponseType{URL: url.String()}
 
 			w.Header().Set("Content-Type", "application/json")
 

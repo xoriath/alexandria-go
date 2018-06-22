@@ -1,9 +1,11 @@
 package index
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/xml"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 	"sync"
@@ -25,16 +27,31 @@ type Store struct {
 	prefix string
 	ext    string
 
-	indexWriteChan chan *types.Indexes
+	indexWriteChan     chan *types.Indexes
+	f1FragmentTemplate *template.Template
 }
 
 // NewStore creates a index store
-func NewStore(prefix, ext string) Store {
-	store := Store{prefix: prefix, ext: ext}
+func NewStore(prefix, ext, f1FragmentPattern string) Store {
+	store := Store{
+		prefix:             prefix,
+		ext:                ext,
+		f1FragmentTemplate: template.Must(template.New("").Parse(f1FragmentPattern))}
 
 	store.prepareDb()
 
 	store.indexWriteChan = store.insertIndexes()
+
+	return store
+}
+
+// OldStore open a already existing index store
+func OldStore(file, f1FragmentPattern string) Store {
+	store := Store{
+		FileName:           file,
+		f1FragmentTemplate: template.Must(template.New("").Parse(f1FragmentPattern))}
+
+	store.getDb()
 
 	return store
 }
@@ -44,7 +61,7 @@ func (i *Store) getDbFile(prefix, ext string) (string, error) {
 	if i.FileName == "" {
 
 		for j := 0; j < 10000; j++ {
-			filename := "./" + prefix + "-" + strconv.Itoa(j) + ext
+			filename := "./" + prefix + "-" + strconv.Itoa(j) + "." + ext
 			if _, err := os.Stat(filename); os.IsNotExist(err) {
 				i.FileName = filename
 				return filename, nil
@@ -61,15 +78,21 @@ func (i *Store) getDb() *sql.DB {
 
 	if i.handle == nil {
 
-		filename, err := i.getDbFile(i.prefix, i.ext)
+		if i.prefix != "" && i.ext != "" {
+			fileName, err := i.getDbFile(i.prefix, i.ext)
+			if err != nil {
+				panic(err)
+			}
+
+			i.FileName = fileName
+		}
+
+		handle, err := sql.Open("sqlite3", i.FileName)
 		if err != nil {
 			panic(err)
 		}
 
-		i.handle, err = sql.Open("sqlite3", filename)
-		if err != nil {
-			panic(err)
-		}
+		i.handle = handle
 	}
 
 	return i.handle
@@ -206,9 +229,11 @@ func (i *Store) FetchIndex(book *types.Book, wg *sync.WaitGroup, progressBar *pb
 		defer wg.Done()
 	}
 
-	url := fmt.Sprintf("http://content.alexandria.atmel.com/meta/f1/%v-%v-%v.xml", book.ID, book.Language, book.Version)
+	parts := map[string]string{"Id": book.ID, "Language": book.Language, "Version": book.Version}
+	var url bytes.Buffer
+	i.f1FragmentTemplate.Execute(&url, parts)
 
-	resp, err := http.Get(url)
+	resp, err := http.Get(url.String())
 	if err != nil {
 		panic(err)
 	}
