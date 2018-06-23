@@ -19,12 +19,11 @@
                     <span class="locale">{{.Language}}</span>
                     <span class="name">{{.Title}}</span>
                     <span class="description">{{.Description}}</span>
-                    <span class="BrandingPackageName">{{$.ContentRoot.BrandingPackage}}</span>
                     <div class="properties">Paths:
                         <div class="paths">{{$product := .Product $.Product}}{{- range $product.Paths}}
                             <div class="path">
                                 <span class="languages">{{$.Locale}}</span>
-                                <span class="membership">full</span>
+                                <span class="membership">{{- if eq .Path "\\Recommended"}}Recommended{{else}}Full{{end -}}</span>
                                 <span class="name">{{.Path}}</span>
                                 <span class="priority">{{.Priority}}</span>
                                 <span class="skuId">{{$product.SkuID}}</span>

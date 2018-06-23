@@ -80,7 +80,6 @@ func newReverseProxy(target *url.URL) *httputil.ReverseProxy {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
 		req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
-		fmt.Printf("Scheme: %s\nHost: %s\nPath: %s\n", req.URL.Scheme, req.URL.Host, req.URL.Path)
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery
 		} else {
