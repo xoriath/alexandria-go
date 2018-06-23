@@ -3,8 +3,8 @@ package fetch
 import (
 	"bufio"
 	"encoding/xml"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -27,7 +27,7 @@ func MainIndex(index string) (*types.Books, error) {
 		return parseMainIndex(reader)
 	}
 
-	fmt.Println("Fetching main index file...", index)
+	log.Println("Fetching main index file...", index)
 	resp, err := http.Get(index)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func fetchMainIndexLocally(index string) (io.Reader, error) {
 		return nil, err
 	}
 
-	fmt.Println("Opening main index file...", index)
+	log.Println("Opening main index file...", index)
 	return bufio.NewReader(file), nil
 }
 
@@ -60,7 +60,7 @@ func parseMainIndex(reader io.Reader) (*types.Books, error) {
 }
 
 // F1Indexes Fetch the F1 indexes that correspond to the content of the books
-func F1Indexes(books *types.Books, index index.Store) index.Store {
+func F1Indexes(books *types.Books, index *index.Store) *index.Store {
 	var wg sync.WaitGroup
 	wg.Add(len(books.Books))
 

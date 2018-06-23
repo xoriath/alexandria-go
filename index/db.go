@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/xml"
-	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"sync"
@@ -32,8 +32,8 @@ type Store struct {
 }
 
 // NewStore creates a index store
-func NewStore(prefix, ext, f1FragmentPattern string) Store {
-	store := Store{
+func NewStore(prefix, ext, f1FragmentPattern string) *Store {
+	store := &Store{
 		prefix:             prefix,
 		ext:                ext,
 		f1FragmentTemplate: template.Must(template.New("").Parse(f1FragmentPattern))}
@@ -46,8 +46,8 @@ func NewStore(prefix, ext, f1FragmentPattern string) Store {
 }
 
 // OldStore open a already existing index store
-func OldStore(file, f1FragmentPattern string) Store {
-	store := Store{
+func OldStore(file, f1FragmentPattern string) *Store {
+	store := &Store{
 		FileName:           file,
 		f1FragmentTemplate: template.Must(template.New("").Parse(f1FragmentPattern))}
 
@@ -151,7 +151,7 @@ func (i *Store) findID(tx *sql.Tx, bookID, file string) (id int64) {
 		break
 	}
 
-	fmt.Println("Fetched existing id", id)
+	log.Println("Fetched existing id", id)
 
 	return
 }
@@ -209,8 +209,8 @@ func (i *Store) insertIndexes() chan *types.Indexes {
 				_, err := tx.Stmt(keywordStmt).Exec(index.Keyword, id)
 				if err != nil {
 					//tx.Rollback()
-					fmt.Println("Panic for", indexes.BookID, id)
-					fmt.Printf("%+v\n", err)
+					log.Fatalln("Panic for", indexes.BookID, id)
+					log.Fatalf("%+v\n", err)
 					//panic(err)
 				}
 			}
@@ -242,10 +242,11 @@ func (i *Store) FetchIndex(book *types.Book, wg *sync.WaitGroup, progressBar *pb
 
 	decoder := xml.NewDecoder(resp.Body)
 	indexes := new(types.Indexes)
+	indexes.Etag = resp.Header.Get("Etag")
 
 	err = decoder.Decode(indexes)
 	if err != nil {
-		fmt.Println("Failed to parse", url)
+		log.Panic("Failed to parse", url)
 		panic(err)
 	}
 

@@ -4,4 +4,5 @@ package types
 type Indexes struct {
 	BookID   string  `xml:"id,attr"`
 	Keywords []Index `xml:"index"`
+	Etag     string
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/xoriath/alexandria-go/fetch"
 	"github.com/xoriath/alexandria-go/index"
 
-	"fmt"
 	"net/http"
 )
 
@@ -27,7 +26,7 @@ var (
 		"Redirect pattern for webhelp lookups. 2 replacement parameters, first is Book GUID and second is Topic GUID.")
 	contentRedirectPattern = flag.String("content-redirect-pattern", "/content/{{.ResourceType}}/{{.Id}}-{{.Language}}-{{.Version}}",
 		"Redirect pattern for content lookups.")
-	f1FragmentPattern = flag.String("f1-fragment-pattern", "/content/meta/f1/{{.Id}}-{{.Language}}-{{.Version}}.xml",
+	f1FragmentPattern = flag.String("f1-fragment-pattern", "http://content.alexandria.atmel.com/meta/f1/{{.Id}}-{{.Language}}-{{.Version}}.xml",
 		"Pattern for the F1 fragments")
 	contentServerBase = flag.String("content-server-base", "http://s3.amazonaws.com/atmel-studio-doc/",
 		"The content server")
@@ -40,10 +39,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	} else {
-		fmt.Println("Read main index,", len(books.Books), "books are available")
+		log.Println("Read main index,", len(books.Books), "books are available")
 	}
 
-	var store index.Store
+	var store *index.Store
 	if *preparedKeywordStore != "" {
 		store = index.OldStore(*preparedKeywordStore, *f1FragmentPattern)
 	} else {
@@ -55,9 +54,9 @@ func main() {
 	}
 
 	keywordStatistics := store.GetStatistics()
-	fmt.Println("Index store using ", store.FileName, "with", keywordStatistics.KeywordCount, "keywords covering", keywordStatistics.NumberOfFiles, "files")
+	log.Println("Index store using ", store.FileName, "with", keywordStatistics.KeywordCount, "keywords covering", keywordStatistics.NumberOfFiles, "files")
 
-	mux := createRoutes(books, &store, *mainIndex, *webhelpRedirectPattern)
+	mux := createRoutes(books, store, *mainIndex, *webhelpRedirectPattern)
 	n := negroni.Classic()
 	logger := negroni.NewLogger()
 
@@ -65,6 +64,6 @@ func main() {
 	n.UseHandler(mux)
 
 	serverAddress := ":3001"
-	fmt.Println("Server running, listening on", serverAddress)
+	log.Println("Server running, listening on", serverAddress)
 	log.Fatal(http.ListenAndServe(serverAddress, n))
 }

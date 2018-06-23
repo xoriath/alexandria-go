@@ -43,9 +43,8 @@ func NewReloadKeywordHandler(books *types.Books, store *index.Store, f1Pattern s
 }
 
 func (rk *ReloadKeyword) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	tempStore := fetch.F1Indexes(rk.books, index.NewStore("keywords", ".db", rk.f1Pattern))
+	rk.store = fetch.F1Indexes(rk.books, rk.store)
 
-	rk.store = &tempStore
 	stat := rk.store.GetStatistics()
 	json.NewEncoder(w).Encode(stat)
 }
