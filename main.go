@@ -29,7 +29,7 @@ var (
 		"Redirect pattern for content lookups.")
 	f1FragmentPattern = flag.String("f1-fragment-pattern", "/content/meta/f1/{{.Id}}-{{.Language}}-{{.Version}}.xml",
 		"Pattern for the F1 fragments")
-	contentServerBase = flag.String("content-server-base", "https://s3.amazonaws.com/content.alexandria.atmel.com/",
+	contentServerBase = flag.String("content-server-base", "http://s3.amazonaws.com/atmel-studio-doc/",
 		"The content server")
 )
 

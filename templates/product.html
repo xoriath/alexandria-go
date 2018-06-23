@@ -1,13 +1,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" />
-        <meta http-equiv="Content-Location" content="/catalogs/{{.Product}}/{{.Locale}}" />
-        <link type="text/css" rel="stylesheet" href="/static/catalog.css" />
+        <meta http-equiv="Content-Location" content="http://{{.Host}}/catalogs/{{.Product}}/{{.Locale}}" />
+        <link type="text/css" rel="stylesheet" href="http://{{.Host}}/static/catalog.css" />
         <title>All Book Listings</title>
     </head>
     <body class="book-list">
         <div class="details">
-            <a class="catalog-locale-link" href="/catalogs/{{.Product}}">Catalog locales</a>
+            <a class="catalog-locale-link" href="http://{{.Host}}/catalogs/{{.Product}}">Catalog locales</a>
         </div>
         <div class="book-groups">{{- range .ContentRoot.Books }}
             <div class="book-group">
@@ -36,28 +36,28 @@
                         <div class="package">
                             <span class="packageType">content</span>
                             <span class="packageFormat">v2.0</span>
-                            <span class="name">{{.ID}}-{{.Language}}-{{.Version}}</span>Deployed:
+                            <span class="name">{{.ID}}-{{.Language}}-{{.Version}}</span>
+                            <a class="current-link" href="http://{{$.Host}}/cab/{{.ID}}-{{.Language}}-{{.Version}}.cab">{{.ID}}-{{.Language}}-{{.Version}}.cab</a>
                             <span class="deployed">true</span>
                             <span class="last-modified">{{.Timestamp}}</span>
                             <span class="package-etag">{{.CabMD5}}</span>
-                            <a class="current-link" href="/cab/{{.ID}}-{{.Language}}-{{.Version}}.cab">{{.ID}}-{{.Language}}-{{.Version}}.cab</a>
                             <span class="package-size-bytes">{{.CompressedSize}}</span>
                             <span class="package-size-bytes-uncompressed">{{.RawSize}}</span>
                         </div>
                         <div class="package">
                             <span class="packageType">branding</span>
                             <span class="packageFormat">v2.0</span>
-                            <span class="name">{{$.ContentRoot.BrandingPackage}}</span>Deployed:
+                            <span class="name">{{$.ContentRoot.BrandingPackage}}</span>
+                            <a class="current-link" href="http://{{$.Host}}/content/branding/{{$.ContentRoot.BrandingPackage}}.cab">{{$.ContentRoot.BrandingPackage}}.cab</a>
                             <span class="deployed">true</span>
                             <span class="last-modified">{{$.ContentRoot.BrandingPackageTimestamp}}</span>
                             <span class="package-etag">{{$.ContentRoot.BrandingPackageMD5}}</span>
-                            <a class="current-link" href="/content/branding/{{$.ContentRoot.BrandingPackage}}.cab">{{$.ContentRoot.BrandingPackage}}.cab</a>
                             <span class="package-size-bytes">{{$.ContentRoot.BrandingPackageCompressedSize}}</span>
                             <span class="package-size-bytes-uncompressed">{{$.ContentRoot.BrandingPackageRawSize}}</span>
                         </div>
                     </div>
-                </div>{{- end }}
-            </div>
+                </div>
+            </div>{{- end }}
         </div>
     </body>
 </html>
