@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -11,10 +13,12 @@ import (
 type Resource struct {
 	books    *types.Books
 	resource string
+
+	contentRedirectTemplate *template.Template
 }
 
-func NewResourceHandler(books *types.Books, resource string) *Resource {
-	return &Resource{books: books, resource: resource}
+func NewResourceHandler(books *types.Books, resource, redirectPattern string) *Resource {
+	return &Resource{books: books, resource: resource, contentRedirectTemplate: template.Must(template.New("").Parse(redirectPattern))}
 }
 
 func (r *Resource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -42,12 +46,18 @@ func (r *Resource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	url := fmt.Sprintf("http://content.alexandria.atmel.com/%v/%v-%v-%v", r.resource, guid, language, version)
+	parts := map[string]string{"ResourceType": r.resource, "Id": guid, "Language": language, "Version": version}
+	var url bytes.Buffer
+	if err := r.contentRedirectTemplate.Execute(&url, parts); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	urlString := url.String()
 
 	switch r.resource {
 	case "cab":
-		url += ".cab"
+		urlString += ".cab"
 	}
 
-	http.Redirect(w, req, url, http.StatusTemporaryRedirect)
+	http.Redirect(w, req, urlString, http.StatusTemporaryRedirect)
 }

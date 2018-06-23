@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 
 	"github.com/gorilla/mux"
 	"github.com/xoriath/alexandria-go/handlers"
@@ -27,9 +29,9 @@ func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redire
 
 	// Endpoints serving CAB and package data
 	mux.Handle("/cab/{guid:GUID-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+}-{language:[a-zA-Z]+-[a-zA-Z]+}-{version:[0-9]+}.cab",
-		handlers.NewResourceHandler(books, "cab")).Methods("GET")
+		handlers.NewResourceHandler(books, "cab", *contentRedirectPattern)).Methods("GET")
 	mux.Handle("/package/{guid:GUID-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+}/{version:[0-9]+}/{language:[a-zA-Z]+-[a-zA-Z]+}",
-		handlers.NewResourceHandler(books, "package")).Methods("GET")
+		handlers.NewResourceHandler(books, "package", *contentRedirectPattern)).Methods("GET")
 
 	// Keyword endpoints
 	mux.Handle("/keyword/{keyword}", handlers.NewKeywordHandler(indexStore, redirectPattern).NoRedirect()).Methods("GET")
@@ -50,6 +52,18 @@ func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redire
 	// Reload endpoints
 	mux.Handle("/reload/books", handlers.NewReloadBookHandler(books, mainIndex)).Methods("GET")
 	mux.Handle("/reload/keywords", handlers.NewReloadKeywordHandler(books, indexStore, *f1FragmentPattern)).Methods("GET")
+
+	// Reverse to the content server
+	contentBaseURL, err := url.Parse(*contentServerBase)
+	if err != nil {
+		panic(err)
+	}
+
+	mux.PathPrefix("/content/").Handler(
+		http.StripPrefix("/content/", httputil.NewSingleHostReverseProxy(contentBaseURL)))
+	mux.HandleFunc("/content", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/content/index.html", http.StatusTemporaryRedirect)
+	})
 
 	return mux
 }

@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/xoriath/alexandria-go/types"
 )
 
@@ -20,12 +21,18 @@ func NewProductHandler(books *types.Books) *Product {
 
 func (p *Product) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
-	// vars := mux.Vars(req)
-	// product := vars["product"]
-	// locale := vars["locale"]
+	vars := mux.Vars(req)
+	product := vars["product"]
+	locale := vars["locale"]
+
+	data := struct {
+		Product string
+		Locale  string
+		Books   []types.Book
+	}{product, locale, p.books.Books}
 
 	t := template.Must(template.ParseFiles("./templates/product.html"))
-	err := t.Execute(w, p.books)
+	err := t.Execute(w, data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

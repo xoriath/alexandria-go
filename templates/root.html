@@ -120,6 +120,9 @@
                 <th>Language</th>
                 <th>Webhelp</th>
                 <th>ID</th>
+                <th>.cab SHA1</th>
+                <th>Compressed size</th>
+                <th>Installed size</th>
             </tr>
             {{- range .Books }}
             <tr>
@@ -128,6 +131,9 @@
                 <td>{{ .Language }}</td>
                 <td>{{ .Webhelp }}</td>
                 <td>{{ .ID }}</td>
+                <td>{{ .CabSHA1 }}</td>
+                <td>{{ .CompressedSize }}</td>
+                <td>{{ .RawSize }}</td>
             </tr>
             {{- end }}
         </table>
