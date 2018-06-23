@@ -111,7 +111,7 @@ func (i *Store) prepareDb() {
 		);
 
 		CREATE TABLE IF NOT EXISTS keywords ( 
-			keyword 	TEXT NOT NULL, 
+			keyword 	TEXT NOT NULL COLLATE NOCASE, 
 			file		INTEGER NOT NULL,
 			
 			FOREIGN KEY(file) REFERENCES files(file)
@@ -273,7 +273,7 @@ func (i *Store) LookupKeyword(keyword string) []KeywordResult {
 		FROM keywords
 		INNER JOIN files
 		ON keywords.file = files.file
-		WHERE keywords.keyword = ?`)
+		WHERE keywords.keyword = ? COLLATE NOCASE`)
 
 	if err != nil {
 		panic(err)
