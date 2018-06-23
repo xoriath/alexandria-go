@@ -6,9 +6,9 @@ type Books struct {
 	BrandingPackageMD5  string `xml:"branding.package.md5,attr"`
 	BrandingPackageSHA1 string `xml:"branding.package.sha1,attr"`
 
-	BrandingPackageCompressedSize int    `xml:"branding.package.size.compresssed,attr"`
+	BrandingPackageCompressedSize int    `xml:"branding.package.size.compressed,attr"`
 	BrandingPackageRawSize        int    `xml:"branding.package.size.raw,attr"`
-	BrandingPackageTimestamp      string `xml:"branding.package.timestamp"`
+	BrandingPackageTimestamp      string `xml:"branding.package.timestamp,attr"`
 
 	Books []Book `xml:"book"`
 }
