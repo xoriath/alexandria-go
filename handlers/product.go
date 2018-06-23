@@ -26,10 +26,10 @@ func (p *Product) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	locale := vars["locale"]
 
 	data := struct {
-		Product string
-		Locale  string
-		Books   []types.Book
-	}{product, locale, p.books.Books}
+		Product     string
+		Locale      string
+		ContentRoot *types.Books
+	}{product, locale, p.books}
 
 	t := template.Must(template.ParseFiles("./templates/product.html"))
 	err := t.Execute(w, data)
