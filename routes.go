@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/xoriath/alexandria-go/handlers"
@@ -59,11 +63,29 @@ func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redire
 		panic(err)
 	}
 
+	contentProxy := httputil.NewSingleHostReverseProxy(contentBaseURL)
+	contentProxy.ModifyResponse = func(r *http.Response) error {
+		if r.StatusCode != http.StatusOK {
+			replaceResponseBody(r, fmt.Sprintf("<html><header><title>Content not found (%d).</title></header><body>Content not found (%d).</body></html>", r.StatusCode, r.StatusCode))
+		}
+
+		return nil
+	}
+
 	mux.PathPrefix("/content/").Handler(
-		http.StripPrefix("/content/", httputil.NewSingleHostReverseProxy(contentBaseURL)))
+		http.StripPrefix("/content/", contentProxy))
 	mux.HandleFunc("/content", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/content/index.html", http.StatusTemporaryRedirect)
 	})
 
 	return mux
+}
+
+func replaceResponseBody(r *http.Response, message string) {
+	r.Body.Close()
+	body := ioutil.NopCloser(strings.NewReader(message))
+	r.Body = body
+	r.ContentLength = int64(len(message))
+	r.Header.Set("Content-Length", strconv.Itoa(len(message)))
+	r.Header.Set("Content-Type", "text/html; charset=utf-8")
 }
