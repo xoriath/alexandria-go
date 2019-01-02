@@ -7,10 +7,14 @@ import (
 	"github.com/xoriath/alexandria-go/types"
 )
 
+// Catalog describes the set of catalogs that are available.
+//
+// This is used to separate consuming applications, i.e AtmelStudio70
 type Catalog struct {
 	Products []string
 }
 
+// NewCatalogHandler creates a new HTTP handler for the catalogs
 func NewCatalogHandler(books *types.Books) *Catalog {
 
 	products := books.Products()

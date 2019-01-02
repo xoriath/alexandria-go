@@ -13,6 +13,7 @@ import (
 	"github.com/xoriath/alexandria-go/index"
 )
 
+// Keyword is a HTTP handler for keyword lookups
 type Keyword struct {
 	store                   *index.Store
 	redirect                bool

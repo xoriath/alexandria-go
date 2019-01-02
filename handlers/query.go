@@ -11,6 +11,7 @@ import (
 	"github.com/xoriath/alexandria-go/index"
 )
 
+// Query is a HTTP handler for the MTPS query endpoint
 type Query struct {
 	store                   *index.Store
 	contentRedirectTemplate *template.Template
@@ -56,11 +57,11 @@ func (q *Query) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			if redirect == "true" {
 				http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
-				return
-			} else {
+			} else { 
 				http.Error(w, fmt.Sprintf("Redirect parameter is not 'true', but '%s'", redirect), http.StatusBadRequest)
-				return
 			}
+
+			return
 		}
 	}
 

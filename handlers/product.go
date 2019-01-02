@@ -8,6 +8,7 @@ import (
 	"github.com/xoriath/alexandria-go/types"
 )
 
+// Product contains all the books that relates to the product.
 type Product struct {
 	books *types.Books
 }
@@ -15,6 +16,7 @@ type Product struct {
 type productInfo struct {
 }
 
+// NewProductHandler creates the Product which is a HTTP handler. 
 func NewProductHandler(books *types.Books) *Product {
 	return &Product{books: books}
 }

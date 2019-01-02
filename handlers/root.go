@@ -8,6 +8,7 @@ import (
 	"github.com/xoriath/alexandria-go/types"
 )
 
+// Root is the HTTP handler for the root page. It contains an overview of all content available on the server.
 type Root struct {
 	books *types.Books
 	templateFunctions template.FuncMap

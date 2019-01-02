@@ -13,6 +13,7 @@ type catalogLocales struct {
 	Locale  string
 }
 
+// CatalogLocale maps a catalog to a list of available locales for that catalog
 type CatalogLocale struct {
 	ProductLocales map[string][]string
 }
@@ -22,6 +23,7 @@ type catalogLocalePage struct {
 	Locales []string
 }
 
+// NewCatalogLocalesHandler creates an new HTTP handler for the locale-specific part of a catalog
 func NewCatalogLocalesHandler(books *types.Books) *CatalogLocale {
 
 	productLocales := make(map[string][]string)
