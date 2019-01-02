@@ -1,16 +1,16 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
-	"fmt"
 
 	"github.com/xoriath/alexandria-go/types"
 )
 
 // Root is the HTTP handler for the root page. It contains an overview of all content available on the server.
 type Root struct {
-	books *types.Books
+	books             *types.Books
 	templateFunctions template.FuncMap
 }
 
@@ -26,7 +26,7 @@ func NewRootHandler(books *types.Books) *Root {
 // CatalogHandler handles the
 func (r *Root) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
-	t := template.Must(template.New("root.html").Funcs(r.templateFunctions).ParseFiles("./templates/root.html"))
+	t := template.Must(template.New("root.html").Funcs(r.templateFunctions).ParseFiles("./templates/root.gohtml"))
 	err := t.Execute(w, r.books)
 
 	if err != nil {

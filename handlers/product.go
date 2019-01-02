@@ -34,7 +34,7 @@ func (p *Product) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		ContentRoot *types.Books
 	}{req.Host, product, locale, p.books}
 
-	t := template.Must(template.ParseFiles("./templates/product.html"))
+	t := template.Must(template.ParseFiles("./templates/product.gohtml"))
 	err := t.Execute(w, data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

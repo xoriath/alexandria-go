@@ -25,7 +25,7 @@ func NewCatalogHandler(books *types.Books) *Catalog {
 // CatalogHandler handles the
 func (c *Catalog) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
-	t := template.Must(template.ParseFiles("./templates/catalog.html"))
+	t := template.Must(template.ParseFiles("./templates/catalog.gohtml"))
 	err := t.Execute(w, c.Products)
 
 	if err != nil {
