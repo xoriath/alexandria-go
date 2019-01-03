@@ -132,8 +132,8 @@
                 <td>{{ .Webhelp }}</td>
                 <td>{{ .ID }}</td>
                 <td>{{ .CabSHA1 }}</td>
-                <td>{{ .CompressedSize }}</td>
-                <td>{{ .RawSize }}</td>
+                <td>{{ prettySize .CompressedSize }}</td>
+                <td>{{ prettySize .RawSize }}</td>
             </tr>
             {{- end }}
         </table>

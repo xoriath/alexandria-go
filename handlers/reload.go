@@ -30,14 +30,14 @@ func (rb *ReloadBook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ReloadKeyword
+// ReloadKeyword is the HTTP handler that forces a reload of the keyword index
 type ReloadKeyword struct {
 	books     *types.Books
 	store     *index.Store
 	f1Pattern string
 }
 
-// NewReloadKeywordHandler
+// NewReloadKeywordHandler creates the HTTP handler for the reload endpoint
 func NewReloadKeywordHandler(books *types.Books, store *index.Store, f1Pattern string) *ReloadKeyword {
 	return &ReloadKeyword{books: books, store: store, f1Pattern: f1Pattern}
 }

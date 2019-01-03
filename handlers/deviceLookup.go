@@ -10,10 +10,14 @@ import (
 	"github.com/xoriath/alexandria-go/index"
 )
 
+// DeviceLookup is a HTTP handler that is used to do the lookup rest api.
+//
+// It forwards the request to the query endpoint.
 type DeviceLookup struct {
 	store *index.Store
 }
 
+// NewDeviceLookupHandler creates a HTTP handler for device lookup
 func NewDeviceLookupHandler(store *index.Store) *DeviceLookup {
 	return &DeviceLookup{store: store}
 }

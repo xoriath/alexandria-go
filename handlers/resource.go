@@ -10,6 +10,7 @@ import (
 	"github.com/xoriath/alexandria-go/types"
 )
 
+// Resource is a set of all specific content resources available with redirects
 type Resource struct {
 	books    *types.Books
 	resource string
@@ -17,8 +18,13 @@ type Resource struct {
 	contentRedirectTemplate *template.Template
 }
 
+// NewResourceHandler creates the Resource HTTP handler
 func NewResourceHandler(books *types.Books, resource, redirectPattern string) *Resource {
-	return &Resource{books: books, resource: resource, contentRedirectTemplate: template.Must(template.New("").Parse(redirectPattern))}
+	return &Resource{
+		books: books, 
+		resource: resource, 
+		contentRedirectTemplate: template.Must(template.New("").Parse(redirectPattern)),
+	}
 }
 
 func (r *Resource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
