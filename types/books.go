@@ -40,6 +40,19 @@ func (b *Books) Products() []string {
 	return Unique(products)
 }
 
+// Book returns the book that matches ID, version and language, or nil if we don't have it
+func (b *Books) Book(ID, version, language string) *Book {
+
+	for _, book := range b.Books {
+		if book.ID == ID && book.Version == version && book.Language == language {
+			return &book
+		}
+	}
+
+	return nil
+}
+
+// Locales returns all the known locales in the set of books
 func (b *Books) Locales(product string) []string {
 	var locales []string
 

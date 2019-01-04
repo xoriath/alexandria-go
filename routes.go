@@ -35,7 +35,7 @@ func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redire
 	mux.Handle("/catalogs", handlers.NewCatalogHandler(books, TemplatePath)).Methods("GET", "HEAD")
 	mux.Handle("/catalogs/{product}", handlers.NewCatalogLocalesHandler(books)).Methods("GET", "HEAD")
 	mux.Handle("/catalogs/{product}/{locale}", handlers.NewProductHandler(books)).Methods("GET", "HEAD")
-	mux.Handle("/query/{query}", handlers.NewQueryHandler(indexStore, redirectPattern)).Methods("GET", "HEAD") //.Queries("appId", "{appId}").Queries("l", "{language}").Queries("k", "keywords").Queries("rd", "redirect")
+	mux.Handle("/query/{query}", handlers.NewQueryHandler(books, indexStore, redirectPattern)).Methods("GET", "HEAD") //.Queries("appId", "{appId}").Queries("l", "{language}").Queries("k", "keywords").Queries("rd", "redirect")
 
 	// Endpoints serving CAB and package data
 	mux.Handle("/cab/{guid:GUID-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+}-{language:[a-zA-Z]+-[a-zA-Z]+}-{version:[0-9]+}.cab",
