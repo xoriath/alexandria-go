@@ -9,10 +9,12 @@ import (
 	"gotest.tools/golden"
 )
 
-type TestProductsListener struct{}
+type TestProductsListener struct {
+	data []string
+}
 
-func (*TestProductsListener) Products() []string {
-	return []string{"Product1", "Product2"}
+func (t *TestProductsListener) Products() []string {
+	return t.data
 }
 
 func TestCatalogHandler(t *testing.T) {
@@ -23,7 +25,9 @@ func TestCatalogHandler(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := NewCatalogHandler(&TestProductsListener{}, "../templates")
+	handler := NewCatalogHandler(&TestProductsListener{
+		data: []string{"Product1", "Product2"},
+	}, "../templates")
 
 	handler.ServeHTTP(rr, req)
 

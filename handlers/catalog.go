@@ -32,9 +32,8 @@ func NewCatalogHandler(books Productslister, templateFolder string) *Catalog {
 
 // CatalogHandler handles the
 func (c *Catalog) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	err := c.template.Execute(w, c.Products)
 
-	if err != nil {
+	if err := c.template.Execute(w, c.Products); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
