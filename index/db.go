@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"sync"
 
 	_ "github.com/mattn/go-sqlite3" // use sqlite
 	"github.com/xoriath/alexandria-go/types"
@@ -221,11 +220,7 @@ func (i *Store) insertIndexes() chan *types.Indexes {
 }
 
 // FetchIndex downloads the index file, decodes it and requests it to be added to the store
-func (i *Store) FetchIndex(book *types.Book, wg *sync.WaitGroup) {
-
-	if wg != nil {
-		defer wg.Done()
-	}
+func (i *Store) FetchIndex(book *types.Book) {
 
 	parts := map[string]string{"Id": book.ID, "Language": book.Language, "Version": book.Version}
 	var url bytes.Buffer
@@ -253,8 +248,6 @@ func (i *Store) FetchIndex(book *types.Book, wg *sync.WaitGroup) {
 	}
 
 	i.indexWriteChan <- indexes
-
-	log.Printf("Added %s to index", indexes.BookID)
 }
 
 // KeywordResult is a single result, pointing to a BookID and a Filename inside this book which has the keyword
