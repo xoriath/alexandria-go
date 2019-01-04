@@ -89,6 +89,10 @@ func (i *Store) getDb() *sql.DB {
 			panic(err)
 		}
 
+		if err = handle.Ping(); err != nil {
+			panic(err)
+		}
+
 		i.handle = handle
 	}
 
@@ -311,6 +315,8 @@ func (i *Store) getFileCount() (count int) {
 		panic(err)
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		err := rows.Scan(&count)
 		if err != nil {
@@ -331,6 +337,8 @@ func (i *Store) getKeywordCount() (count int) {
 	if err != nil {
 		panic(err)
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&count)
@@ -353,6 +361,8 @@ func (i *Store) getKeywords() (keywords []string) {
 	if err != nil {
 		panic(err)
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		var keyword string
