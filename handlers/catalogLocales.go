@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -44,6 +45,8 @@ func (c *CatalogLocale) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "404 No locale for "+product, http.StatusNotFound)
 		return
 	}
+
+	log.Printf("[locales] Serving %v for %s", locales, product)
 
 	t := template.Must(template.ParseFiles("./templates/catalogLocales.gohtml"))
 	err := t.Execute(w, &catalogLocalePage{Product: product, Locales: locales})

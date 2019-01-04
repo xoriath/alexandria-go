@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -43,6 +44,9 @@ func (d *DeviceLookup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keywordResults := d.store.LookupKeyword(query)
+
+	log.Printf("[device-lookup] lookup for %s/%s/%s/%s returned %v", device, component, register, bitfield, keywordResults)
+	log.Printf("[device-lookup] based on %s", query)
 
 	if len(keywordResults) == 0 {
 		http.Error(w, fmt.Sprintf("No results for query '%v'", query), http.StatusNotFound)

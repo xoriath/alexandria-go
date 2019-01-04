@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 )
@@ -32,7 +33,7 @@ func NewCatalogHandler(books Productslister, templateFolder string) *Catalog {
 
 // CatalogHandler handles the
 func (c *Catalog) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-
+	log.Printf("[catalog] Serving %d products", len(c.Products))
 	if err := c.template.Execute(w, c.Products); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
