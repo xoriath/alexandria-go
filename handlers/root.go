@@ -26,7 +26,7 @@ func NewRootHandler(books *types.Books) *Root {
 // CatalogHandler handles the
 func (r *Root) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
-	t := template.Must(template.New("root.html").Funcs(r.templateFunctions).ParseFiles("./templates/root.gohtml"))
+	t := template.Must(template.New("root.gohtml").Funcs(r.templateFunctions).ParseFiles("./templates/root.gohtml"))
 	err := t.Execute(w, r.books)
 
 	if err != nil {
