@@ -48,7 +48,7 @@ func OldStore(file, f1FragmentPattern string) *Store {
 		FileName:           file,
 		f1FragmentTemplate: template.Must(template.New("").Parse(f1FragmentPattern))}
 
-	store.getDb()
+	store.prepareDb()
 
 	return store
 }
