@@ -15,6 +15,10 @@ import (
 	"github.com/xoriath/alexandria-go/types"
 )
 
+const (
+	TemplatePath string = "templates"
+)
+
 func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redirectPattern string) *mux.Router {
 	mux := mux.NewRouter()
 
@@ -26,7 +30,7 @@ func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redire
 	mux.Handle("/", handlers.NewRootHandler(books)).Methods("GET", "HEAD")
 
 	// Microsoft Help Service Endpoints
-	mux.Handle("/catalogs", handlers.NewCatalogHandler(books)).Methods("GET", "HEAD")
+	mux.Handle("/catalogs", handlers.NewCatalogHandler(books, TemplatePath)).Methods("GET", "HEAD")
 	mux.Handle("/catalogs/{product}", handlers.NewCatalogLocalesHandler(books)).Methods("GET", "HEAD")
 	mux.Handle("/catalogs/{product}/{locale}", handlers.NewProductHandler(books)).Methods("GET", "HEAD")
 	mux.Handle("/query/{query}", handlers.NewQueryHandler(indexStore, redirectPattern)).Methods("GET", "HEAD") //.Queries("appId", "{appId}").Queries("l", "{language}").Queries("k", "keywords").Queries("rd", "redirect")

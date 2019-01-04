@@ -3,8 +3,7 @@ package handlers
 import (
 	"html/template"
 	"net/http"
-
-	"github.com/xoriath/alexandria-go/types"
+	"path/filepath"
 )
 
 // Catalog describes the set of catalogs that are available.
@@ -12,21 +11,28 @@ import (
 // This is used to separate consuming applications, i.e AtmelStudio70
 type Catalog struct {
 	Products []string
+	template *template.Template
+}
+
+// Productslister can return a list of all known products
+type Productslister interface {
+	Products() []string
 }
 
 // NewCatalogHandler creates a new HTTP handler for the catalogs
-func NewCatalogHandler(books *types.Books) *Catalog {
+func NewCatalogHandler(books Productslister, templateFolder string) *Catalog {
 
 	products := books.Products()
 
-	return &Catalog{Products: products}
+	return &Catalog{
+		Products: products,
+		template: template.Must(template.ParseFiles(filepath.Join(templateFolder, "catalog.gohtml"))),
+	}
 }
 
 // CatalogHandler handles the
 func (c *Catalog) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-
-	t := template.Must(template.ParseFiles("./templates/catalog.gohtml"))
-	err := t.Execute(w, c.Products)
+	err := c.template.Execute(w, c.Products)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

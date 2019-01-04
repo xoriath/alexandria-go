@@ -1,0 +1,22 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta name="ROBOTS" content="NOINDEX, NOFOLLOW" />
+        <meta http-equiv="Content-Location" content="/catalogs" />
+        <title>Catalog Listing</title>
+    </head>
+
+    <body class="catalogs">
+        <div class="catalog-list">Catalogs available:
+            <div class="catalog">
+                <span class="name">Product1</span>
+                <span class="description">Product1</span>
+                <a class="catalog-link" href="/catalogs/Product1">Product1</a>
+            </div>
+            <div class="catalog">
+                <span class="name">Product2</span>
+                <span class="description">Product2</span>
+                <a class="catalog-link" href="/catalogs/Product2">Product2</a>
+            </div>
+        </div>
+    </body>
+</html>
