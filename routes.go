@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -60,6 +61,11 @@ func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redire
 	// Reload endpoints
 	mux.Handle("/reload/books", handlers.NewReloadBookHandler(books, mainIndex)).Methods("GET", "HEAD")
 	mux.Handle("/reload/keywords", handlers.NewReloadKeywordHandler(books, indexStore, *f1FragmentPattern)).Methods("GET", "HEAD")
+
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		stat := indexStore.GetStatistics()
+		json.NewEncoder(w).Encode(stat)
+	})
 
 	// Reverse to the content server
 	contentBaseURL, err := url.Parse(*contentServerBase)
