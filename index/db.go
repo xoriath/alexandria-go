@@ -13,8 +13,6 @@ import (
 	_ "github.com/mattn/go-sqlite3" // use sqlite
 	"github.com/xoriath/alexandria-go/types"
 
-	"gopkg.in/cheggaaa/pb.v1"
-
 	"errors"
 	"os"
 )
@@ -223,7 +221,7 @@ func (i *Store) insertIndexes() chan *types.Indexes {
 }
 
 // FetchIndex downloads the index file, decodes it and requests it to be added to the store
-func (i *Store) FetchIndex(book *types.Book, wg *sync.WaitGroup, progressBar *pb.ProgressBar) {
+func (i *Store) FetchIndex(book *types.Book, wg *sync.WaitGroup) {
 
 	if wg != nil {
 		defer wg.Done()
@@ -256,9 +254,7 @@ func (i *Store) FetchIndex(book *types.Book, wg *sync.WaitGroup, progressBar *pb
 
 	i.indexWriteChan <- indexes
 
-	if progressBar != nil {
-		progressBar.Increment()
-	}
+	log.Printf("Added %s to index", indexes.BookID)
 }
 
 // KeywordResult is a single result, pointing to a BookID and a Filename inside this book which has the keyword
@@ -299,11 +295,13 @@ func (i *Store) LookupKeyword(keyword string) []KeywordResult {
 	return results
 }
 
+// DatabaseStatistics contains some small statistic numbers from the amount of content in the system
 type DatabaseStatistics struct {
 	NumberOfFiles int `json:"number_of_files"`
 	KeywordCount  int `json:"number_of_keywords"`
 }
 
+// GetStatistics reads the statistics from the db storage and returns them
 func (i *Store) GetStatistics() DatabaseStatistics {
 	fileCount := i.getFileCount()
 	keywordCount := i.getKeywordCount()
