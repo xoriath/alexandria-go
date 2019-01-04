@@ -12,7 +12,6 @@ import (
 
 	"github.com/xoriath/alexandria-go/index"
 	"github.com/xoriath/alexandria-go/types"
-	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 // MainIndex Fetch the main index file. Can be local on online.
@@ -64,14 +63,11 @@ func F1Indexes(books *types.Books, index *index.Store) *index.Store {
 	var wg sync.WaitGroup
 	wg.Add(len(books.Books))
 
-	progressBar := pb.New(len(books.Books)).Prefix("Fetching F1 indexes ").Start()
-
 	for _, book := range books.Books {
-		index.FetchIndex(&book, &wg, progressBar)
+		index.FetchIndex(&book, &wg)
 	}
 
 	wg.Wait()
-	progressBar.Finish()
 
 	return index
 }
