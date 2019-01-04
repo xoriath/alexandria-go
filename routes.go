@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -67,6 +68,10 @@ func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redire
 		json.NewEncoder(w).Encode(stat)
 	})
 
+	mux.HandleFunc("/dump", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(books)
+	})
+
 	// Reverse to the content server
 	contentBaseURL, err := url.Parse(*contentServerBase)
 	if err != nil {
@@ -99,11 +104,12 @@ func newReverseProxy(target *url.URL) *httputil.ReverseProxy {
 			// explicitly disable User-Agent so it's not set to default value
 			req.Header.Set("User-Agent", "")
 		}
-		req.Header.Set("Host", target.Host)
+		req.Header.Set("Host", "s3.amazonaws.com")
 	}
 	return &httputil.ReverseProxy{
 		Director: director,
 		ModifyResponse: func(r *http.Response) error {
+			log.Printf("Response: %+v", r)
 			if r.StatusCode != http.StatusOK {
 				replaceResponseBody(r, fmt.Sprintf("<html><header><title>Content not found (%d).</title></header><body>Content not found (%d).</body></html>", r.StatusCode, r.StatusCode))
 			}
