@@ -50,11 +50,13 @@ func main() {
 	}
 
 	if *fetchKeywords {
-		store = fetch.F1Indexes(books, store)
-	}
+		go func() {
+			store = fetch.F1Indexes(books, store)
 
-	keywordStatistics := store.GetStatistics()
-	log.Println("Index store using ", store.FileName, "with", keywordStatistics.KeywordCount, "keywords covering", keywordStatistics.NumberOfFiles, "files")
+			keywordStatistics := store.GetStatistics()
+			log.Println("Index store using ", store.FileName, "with", keywordStatistics.KeywordCount, "keywords covering", keywordStatistics.NumberOfFiles, "files")
+		}()
+	}
 
 	mux := createRoutes(books, store, *mainIndex, *webhelpRedirectPattern)
 	n := negroni.Classic()
