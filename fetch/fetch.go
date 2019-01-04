@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"sync"
 
 	"github.com/xoriath/alexandria-go/index"
 	"github.com/xoriath/alexandria-go/types"
@@ -60,14 +59,11 @@ func parseMainIndex(reader io.Reader) (*types.Books, error) {
 
 // F1Indexes Fetch the F1 indexes that correspond to the content of the books
 func F1Indexes(books *types.Books, index *index.Store) *index.Store {
-	var wg sync.WaitGroup
-	wg.Add(len(books.Books))
+	for i, book := range books.Books {
+		index.FetchIndex(&book)
 
-	for _, book := range books.Books {
-		index.FetchIndex(&book, &wg)
+		log.Printf("[index] [%d/%d] %s (%s-%s-%s)", i, len(books.Books), book.Title, book.ID, book.Version, book.Language)
 	}
-
-	wg.Wait()
 
 	return index
 }
