@@ -84,7 +84,7 @@ func (i *Store) getDb() *sql.DB {
 			i.FileName = fileName
 		}
 
-		handle, err := sql.Open("sqlite3", i.FileName)
+		handle, err := sql.Open("sqlite3", i.FileName+"?cache=shared&mode=rwc")
 		if err != nil {
 			panic(err)
 		}
@@ -262,18 +262,23 @@ type KeywordResult struct {
 
 // LookupKeyword looks up the keyword in the store, and returns a slice of KeywordResult
 func (i *Store) LookupKeyword(keyword string) []KeywordResult {
-	stmt, err := i.handle.Prepare(`
+	tx, err := i.handle.Begin()
+	if err != nil {
+		panic(err)
+	}
+
+	stmt, err := tx.Prepare(`
 		SELECT files.book, files.filename
 		FROM keywords
 		INNER JOIN files
 		ON keywords.file = files.file
-		WHERE keywords.keyword = '?' COLLATE NOCASE`)
+		WHERE keywords.keyword = ? COLLATE NOCASE`)
 
 	if err != nil {
 		panic(err)
 	}
 
-	rows, err := stmt.Query(keyword)
+	rows, err := tx.Stmt(stmt).Query(keyword)
 	if err != nil {
 		panic(err)
 	}
