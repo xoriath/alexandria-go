@@ -84,7 +84,7 @@ func (i *Store) getDb() *sql.DB {
 			i.FileName = fileName
 		}
 
-		handle, err := sql.Open("sqlite3", i.FileName+"?cache=shared&mode=rwc")
+		handle, err := sql.Open("sqlite3", i.FileName+"?cache=shared&mode=rwc2&_busy_timeout=10000")
 		if err != nil {
 			panic(err)
 		}
@@ -93,6 +93,12 @@ func (i *Store) getDb() *sql.DB {
 			panic(err)
 		}
 
+		_, err = handle.Exec(`PRAGMA journal_mode=WAL;`)
+		if err != nil {
+			panic(err)
+		}
+
+		handle.SetMaxOpenConns(1)
 		i.handle = handle
 	}
 
@@ -130,11 +136,8 @@ func (i *Store) prepareDb() {
 	}
 }
 
-func (i *Store) findID(tx *sql.Tx, bookID, file string) (id int64) {
-
-	stmt, _ := tx.Prepare("SELECT file FROM files WHERE book = '?' AND filename = '?'")
-
-	rows, err := tx.Stmt(stmt).Query(bookID, file)
+func (i *Store) findID(tx *sql.DB, bookID, file string) (id int64) {
+	rows, err := tx.Query(`SELECT file FROM files WHERE book = '?' AND filename = '?'`, bookID, file)
 
 	if err != nil {
 		panic(err)
@@ -165,25 +168,10 @@ func (i *Store) insertIndexes() chan *types.Indexes {
 
 		db := i.getDb()
 
-		bookStmt, err := db.Prepare("INSERT INTO files(book, filename) values(?, ?)")
-		if err != nil {
-			panic(err)
-		}
-
-		keywordStmt, err := db.Prepare("INSERT INTO keywords(keyword, file) values(?, ?)")
-		if err != nil {
-			panic(err)
-		}
-
 		idMap := make(map[string]int64)
 
 		for {
 			indexes := <-ch
-
-			tx, err := db.Begin()
-			if err != nil {
-				panic(err)
-			}
 
 			for _, index := range indexes.Keywords {
 
@@ -191,23 +179,20 @@ func (i *Store) insertIndexes() chan *types.Indexes {
 				id := idMap[indexes.BookID+index.File]
 				if id == 0 {
 					// Try to insert, will fail if exists due to unique constraint
-					res, err := tx.Stmt(bookStmt).Exec(indexes.BookID, index.File)
+					res, err := db.Exec(`INSERT INTO files(book, filename) values(?, ?)`, indexes.BookID, index.File)
 					if err != nil {
 						// unique failed, time to search
-						id = i.findID(tx, indexes.BookID, index.File)
+						id = i.findID(db, indexes.BookID, index.File)
 					} else {
 						// fetch id that we just inserted
-						id, err = res.LastInsertId()
-						if err != nil {
-							tx.Rollback()
-							panic(err)
-						}
+						id, _ = res.LastInsertId()
+
 					}
 				}
 
 				idMap[indexes.BookID+index.File] = id
 
-				_, err := tx.Stmt(keywordStmt).Exec(index.Keyword, id)
+				_, err := db.Exec(`INSERT INTO keywords(keyword, file) values(?, ?)`, index.Keyword, id)
 				if err != nil {
 					//tx.Rollback()
 					log.Fatalln("Panic for", indexes.BookID, id)
@@ -215,8 +200,6 @@ func (i *Store) insertIndexes() chan *types.Indexes {
 					//panic(err)
 				}
 			}
-
-			tx.Commit()
 		}
 	}()
 
@@ -262,23 +245,13 @@ type KeywordResult struct {
 
 // LookupKeyword looks up the keyword in the store, and returns a slice of KeywordResult
 func (i *Store) LookupKeyword(keyword string) []KeywordResult {
-	tx, err := i.handle.Begin()
-	if err != nil {
-		panic(err)
-	}
 
-	stmt, err := tx.Prepare(`
+	rows, err := i.handle.Query(`
 		SELECT files.book, files.filename
 		FROM keywords
 		INNER JOIN files
 		ON keywords.file = files.file
-		WHERE keywords.keyword = ? COLLATE NOCASE`)
-
-	if err != nil {
-		panic(err)
-	}
-
-	rows, err := tx.Stmt(stmt).Query(keyword)
+		WHERE keywords.keyword = ? COLLATE NOCASE`, keyword)
 	if err != nil {
 		panic(err)
 	}
