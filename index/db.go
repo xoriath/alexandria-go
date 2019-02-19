@@ -267,7 +267,7 @@ func (i *Store) LookupKeyword(keyword string) []KeywordResult {
 		FROM keywords
 		INNER JOIN files
 		ON keywords.file = files.file
-		WHERE keywords.keyword = ? COLLATE NOCASE`)
+		WHERE keywords.keyword = '?' COLLATE NOCASE`)
 
 	if err != nil {
 		panic(err)
