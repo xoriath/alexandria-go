@@ -19,4 +19,7 @@ WORKDIR /app
 COPY --from=builder /build/alexandria .
 COPY --from=builder /build/static static
 COPY --from=builder /build/templates templates
+
+EXPOSE 3001
+
 CMD ["./alexandria", "-prepared-keyword-store=/tmp/alexandria.db"]
