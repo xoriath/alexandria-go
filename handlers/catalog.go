@@ -22,11 +22,8 @@ type Productslister interface {
 
 // NewCatalogHandler creates a new HTTP handler for the catalogs
 func NewCatalogHandler(books Productslister, templateFolder string) *Catalog {
-
-	products := books.Products()
-
 	return &Catalog{
-		Products: products,
+		Products: books.Products(),
 		template: template.Must(template.ParseFiles(filepath.Join(templateFolder, "catalog.gohtml"))),
 	}
 }
