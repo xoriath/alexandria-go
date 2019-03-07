@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -41,35 +40,38 @@ func (k *Keyword) NoRedirect() *Keyword {
 }
 
 type urlResponseType struct {
-	URL string `json:"url"`
+	URL     string `json:"url"`
+	BookID  string `json:"book_id"`
+	TopicID string `json:"topic_id"`
+}
+
+func (k *Keyword) mapResultToResponse(keywordResults []index.KeywordResult) []urlResponseType {
+	var jsonResults []urlResponseType
+	for _, keywordResult := range keywordResults {
+		topic := strings.TrimSuffix(keywordResult.Filename, filepath.Ext(keywordResult.Filename))
+		parts := map[string]string{"Book": keywordResult.BookID, "Topic": topic}
+
+		var url bytes.Buffer
+		if err := k.contentRedirectTemplate.Execute(&url, parts); err == nil {
+			jsonResults = append(jsonResults, urlResponseType{URL: url.String(), BookID: keywordResult.BookID, TopicID: topic})
+		}
+	}
+
+	return jsonResults
 }
 
 func (k *Keyword) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	keyword := vars["keyword"]
-
 	keywordResults := k.store.LookupKeyword(keyword)
+	jsonResults := k.mapResultToResponse(keywordResults)
 
-	if len(keywordResults) == 0 {
-		http.Error(w, fmt.Sprintf("No results for query '%v'", keyword), http.StatusNotFound)
+	if k.redirect {
+		http.Redirect(w, r, jsonResults[0].URL, http.StatusTemporaryRedirect)
 	} else {
-		result := keywordResults[0]
-		parts := map[string]string{"Book": result.BookID, "Topic": strings.TrimSuffix(result.Filename, filepath.Ext(result.Filename))}
+		w.Header().Set("Content-Type", "application/json")
 
-		var url bytes.Buffer
-		if err := k.contentRedirectTemplate.Execute(&url, parts); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-
-		if k.redirect {
-			http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
-		} else {
-			urlResponse := &urlResponseType{URL: url.String()}
-
-			w.Header().Set("Content-Type", "application/json")
-
-			json.NewEncoder(w).Encode(urlResponse)
-		}
+		json.NewEncoder(w).Encode(jsonResults)
 	}
 }
