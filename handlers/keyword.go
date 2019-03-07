@@ -25,6 +25,7 @@ func NewKeywordHandler(store *index.Store, redirectPattern string) *Keyword {
 	return &Keyword{
 		store:                   store,
 		redirect:                false,
+		returnAll				 false,
 		contentRedirectTemplate: template.Must(template.New("").Parse(redirectPattern))}
 }
 
