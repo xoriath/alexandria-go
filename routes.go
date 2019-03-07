@@ -46,6 +46,7 @@ func createRoutes(books *types.Books, indexStore *index.Store, mainIndex, redire
 	// Keyword endpoints
 	mux.Handle("/keyword/{keyword}", handlers.NewKeywordHandler(indexStore, redirectPattern).NoRedirect()).Methods("GET", "HEAD")
 	mux.Handle("/keyword/{keyword}/redirect", handlers.NewKeywordHandler(indexStore, redirectPattern).Redirect()).Methods("GET", "HEAD")
+	mux.Handle("/keyword/{keyword}/all", handlers.NewKeywordHandler(indexStore, redirectPattern).ReturnAll()).Methods("GET", "HEAD")
 
 	// Device specific lookup endpoints
 	mux.Handle("/device-lookup/{device}/register/{register}",

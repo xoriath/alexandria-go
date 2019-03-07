@@ -16,6 +16,7 @@ import (
 type Keyword struct {
 	store                   *index.Store
 	redirect                bool
+	returnAll               bool
 	contentRedirectTemplate *template.Template
 }
 
@@ -36,6 +37,16 @@ func (k *Keyword) Redirect() *Keyword {
 // NoRedirect sets the keyword handler to not redirect to the result page, but return the data to the client
 func (k *Keyword) NoRedirect() *Keyword {
 	k.redirect = false
+	return k
+}
+
+// ReturnAll make the handler return all keywords instead of one
+func (k *Keyword) ReturnAll() *Keyword {
+	if k.redirect {
+		panic("Cannot create ReturnAll handler that redirects")
+	}
+
+	k.returnAll = true
 	return k
 }
 
@@ -72,6 +83,10 @@ func (k *Keyword) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 
-		json.NewEncoder(w).Encode(jsonResults)
+		if k.returnAll {
+			json.NewEncoder(w).Encode(jsonResults)
+		} else {
+			json.NewEncoder(w).Encode(jsonResults[0])
+		}
 	}
 }
