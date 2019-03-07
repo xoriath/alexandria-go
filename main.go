@@ -50,7 +50,7 @@ func main() {
 	}
 
 	if *fetchKeywords {
-		go func() {
+		func() {
 			store = fetch.F1Indexes(books, store)
 
 			keywordStatistics := store.GetStatistics()
